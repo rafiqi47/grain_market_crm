@@ -1,0 +1,43 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+    <div class="md:flex md:items-center md:justify-between">
+      <div class="flex-1 min-w-0">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+          Welcome back, <%= current_user.email %>
+        </h2>
+        <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
+          <div class="mt-2 flex items-center text-sm text-gray-500">
+            Current Session View Namespace: 
+            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              <%= @user_role %> Mode
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <% if current_user.super_admin? %>
+      <div class="bg-white rounded-xl shadow-sm border-2 border-dashed border-emerald-500 p-6">
+        <h3 class="text-lg font-bold text-gray-900">System Admin Control Center</h3>
+        <p class="mt-2 text-sm text-gray-600">Global multi-tenant system configurations and platform logging flags.</p>
+      </div>
+    <% end %>
+
+    <% if current_user.owner? || current_user.super_admin? %>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-bold text-gray-900">Enterprise Operations & Metrics</h3>
+        <p class="mt-2 text-sm text-gray-600">Comprehensive CRM partner allocations, analytical charts, and market setups.</p>
+      </div>
+    <% end %>
+
+    <% if current_user.manager? || current_user.owner? || current_user.super_admin? %>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-bold text-gray-900">Trading Desk Workspace</h3>
+        <p class="mt-2 text-sm text-gray-600">Daily spot pricing quotes, inventory tickers, and customer lead lists.</p>
+      </div>
+    <% end %>
+
+  </div>
+</div>
