@@ -1,0 +1,24 @@
+<div id="flash-container" class="fixed top-20 right-5 z-[100] flex flex-col gap-2 pointer-events-none px-4">
+  <% flash.each do |type, message| %>
+    <div data-controller="dismiss" class="pointer-events-auto relative flex items-center p-4 pr-12 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[300px] max-w-md animate-fade-in">
+
+      <%# Icon section %>
+      <div class="flex-shrink-0 mr-3">
+        <% if type == 'alert' %>
+          <span class="text-red-500 text-lg">⚠️</span>
+        <% else %>
+          <span class="text-emerald-500 text-lg">✅</span>
+        <% end %>
+      </div>
+
+      <%# Message section %>
+      <span class="text-sm font-medium text-gray-800"><%= message %></span>
+
+      <%# Larger Dismiss Button - Top Right %>
+      <button data-action="click->dismiss#dismiss"
+              class="absolute top-1 right-2 p-1 text-gray-400 hover:text-gray-800 text-2xl font-light leading-none cursor-pointer transition-colors">
+        &times;
+      </button>
+    </div>
+  <% end %>
+</div>
