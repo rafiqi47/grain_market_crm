@@ -1,0 +1,38 @@
+<%
+  # 1. Logic & Variable Setup FIRST
+  color ||= "primary"
+  variant ||= "contained"
+  disabled ||= false
+  full_width ||= false
+
+  base_classes = "inline-flex items-center justify-center border-2 border-current px-4 py-2 cursor-pointer text-sm font-medium transition-colors duration-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+  base_classes += " w-full" if full_width
+
+  colors = {
+    "main"      => "bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500",
+    "primary"   => "bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500",
+    "secondary" => "bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500",
+    "info"      => "bg-sky-500 hover:bg-sky-600 text-white focus:ring-sky-400",
+    "error"     => "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500"
+  }
+
+  variant_classes = if variant == "outlined"
+    "bg-transparent hover:bg-gray-100 text-gray-700"
+  else
+    colors[color]
+  end
+
+  disabled_classes = disabled ? "opacity-50 cursor-not-allowed" : ""
+
+  # 2. Determine tag type
+  # If we are inside a button_to form, we want a <button type="submit">
+  # Otherwise, a <span> is safer
+  tag_type = local_assigns[:is_submit] ? :button : :span
+%>
+
+<%= content_tag tag_type,
+                class: "#{base_classes} #{variant_classes} #{disabled_classes}", 
+                type: (tag_type == :button ? 'submit' : nil),
+                disabled: disabled do %>
+  <%= content %>
+<% end %>
