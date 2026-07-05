@@ -15,8 +15,12 @@
 
     <div id="flash-messages" class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-4">
       <% flash.each do |type, message| %>
-        <div class="p-4 rounded-md mb-4 text-sm font-medium shadow-sm <%= type == 'alert' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' %>">
-          <%= message %>
+        <div data-controller="dismiss" class="flex justify-between items-center p-4 rounded-md mb-4 text-sm font-medium shadow-sm <%= type == 'alert' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' %>">
+          <span><%= message %></span>
+
+          <button data-action="click->dismiss#dismiss" class="cursor-pointer ml-4 text-lg font-bold opacity-60 hover:opacity-100 transition-opacity">
+            &times;
+          </button>
         </div>
       <% end %>
     </div>
