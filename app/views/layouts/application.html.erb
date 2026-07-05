@@ -10,13 +10,18 @@
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
   </head>
 
-  <body class="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col">
+  <body class="bg-gray-50 text-gray-900 antialiased h-screen w-screen overflow-hidden m-0 p-0 flex flex-col"
+        data-controller="loader" 
+        data-action="turbo:click->loader#show turbo:load->loader#hide turbo:frame-load->loader#hide">
+
+    <%= render "components/loader" %>
+
     <%= render "layouts/navbar" %>
 
     <%# Flash Modal Overlay %>
     <%= render "layouts/flash" %>
 
-    <main class="flex-grow">
+    <main class="flex-grow overflow-y-auto">
       <%= yield %>
     </main>
   </body>
