@@ -12,8 +12,20 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  # Admin Namespace
+  namespace :admin do
+    get "dashboard/index"
+    root to: "dashboard#index"
+    resources :users do
+      member do
+        patch :toggle_subscription # For managing user access
+      end
+    end
+  end
+
   # Defines the root path route ("/")
   root "home#index" # Public Landing Page (no authentication required)
 
   get "dashboard", to: "dashboard#index", as: :dashboard
+
 end

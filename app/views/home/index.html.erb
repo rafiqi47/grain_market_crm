@@ -1,14 +1,31 @@
-<div class="relative overflow-hidden py-24 sm:py-32">
-  <div class="mx-auto max-w-7xl px-6 lg:px-8 text-center">
-    <div class="mx-auto max-w-2xl">
-      <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-6xl">
-        Streamline Your <span class="text-emerald-600">Grain Trading</span> Operations
+<div class="min-h-screen bg-white">
+  <div class="relative flex items-center justify-center h-screen bg-green-50 overflow-hidden">
+
+    <div class="absolute inset-0 z-0 opacity-20">
+      <%= image_tag "grain_market_hero.png",
+          alt: "Grain Market CRM Illustration",
+          class: "w-full h-full object-cover" %>
+    </div>
+
+    <div class="relative z-10 text-center px-4">
+      <h1 class="text-5xl md:text-6xl font-extrabold text-green-900 mb-6">
+        Modernizing the Grain Market
       </h1>
-      <p class="mt-6 text-lg leading-8 text-gray-600">
-        The ultimate light, lightning-fast CRM built for modern grain merchants, managers, and enterprise owners. Track transactions, monitor inventories, and securely manage partnerships seamlessly.
+      <p class="text-xl text-green-700 mb-8 max-w-2xl mx-auto">
+        Streamline your operations, manage inventory, and connect with your market.
+        The CRM built specifically for grain traders and managers.
       </p>
-      <div class="mt-10 flex items-center justify-center gap-x-6">
-        <%= link_to "Explore Platform", "#", class: "text-sm font-semibold leading-6 text-gray-900 hover:text-emerald-600 transition" %>
+
+      <div class="space-x-4">
+        <% if user_signed_in? %>
+          <%= link_to "Go to Dashboard", dashboard_index_path,
+              class: "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition" %>
+        <% else %>
+          <%= link_to "Sign In", new_user_session_path,
+              class: "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition" %>
+          <%= link_to "Learn More", "#",
+              class: "bg-white border-2 border-green-600 text-green-600 hover:bg-green-50 px-8 py-3 rounded-lg font-semibold transition" %>
+        <% end %>
       </div>
     </div>
   </div>

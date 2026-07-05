@@ -12,7 +12,7 @@ class ApplicationController < ActionController::Base
     # Redirect dynamically based on the user's role assignment
     case resource.role
     when "super_admin"
-      dashboard_path(anchor: "system-admin-space")
+      admin_root_path
     when "owner"
       dashboard_path(anchor: "enterprise-metrics")
     when "manager"
