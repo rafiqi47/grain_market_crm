@@ -11,14 +11,12 @@ class ApplicationController < ActionController::Base
   def after_sign_in_path_for(resource)
     # Redirect dynamically based on the user's role assignment
     case resource.role
-    when "super_admin"
-      admin_root_path
-    when "owner"
-      dashboard_path(anchor: "enterprise-metrics")
-    when "manager"
-      dashboard_path(anchor: "trading-desk")
-    else
-      root_path
-    end
+      when "super_admin"
+        admin_root_path
+      when "owner", "manager"
+        dashboard_path
+      else
+        root_path
+      end
   end
 end

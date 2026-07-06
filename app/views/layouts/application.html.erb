@@ -1,28 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html class="h-full overflow-hidden"> <%# Force HTML tag to respect screen restrictions %>
   <head>
     <title>GrainMarketCRM</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
-    <%= csp_meta_tag %> <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= csp_meta_tag %>
     <%= javascript_importmap_tags %>
 
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
   </head>
 
-  <body class="bg-gray-50 text-gray-900 antialiased h-screen w-screen overflow-hidden m-0 p-0 flex flex-col"
-        data-controller="loader" 
+  <body class="bg-gray-50 text-gray-900 antialiased h-screen max-h-screen w-screen overflow-hidden m-0 p-0 flex flex-col"
+        data-controller="loader"
         data-action="turbo:click->loader#show turbo:load->loader#hide turbo:frame-load->loader#hide">
 
     <%= render "components/loader" %>
 
-    <%= render "layouts/navbar" %>
+    <%# The navbar & flash messages stay outside the flexible remaining space %>
+    <div class="flex-shrink-0">
+      <%= render "layouts/navbar" %>
+      <%= render "layouts/flash" %>
+    </div>
 
-    <%# Flash Modal Overlay %>
-    <%= render "layouts/flash" %>
+    <%#
+      Condition: Display the sidebar layout ONLY if a user is signed in
+      AND they are NOT looking at the public home/landing page.
+    %>
+    <% if user_signed_in? && !(controller_name == 'home' && action_name == 'index') %>
+      <%#
+        FIX: min-h-0 breaks the structural layout flex expansion trap.
+        h-full ensures it shares the remaining viewport space perfectly.
+      %>
+      <div class="flex flex-1 min-h-0 h-full overflow-hidden" data-controller="sidebar">
 
-    <main class="flex-grow overflow-y-auto">
-      <%= yield %>
-    </main>
+        <%# Ensure your sidebar template configuration contains flex-shrink-0 %>
+        <%= render "shared/sidebar" %>
+
+        <%#
+          FIX: main container must have strict h-full and min-h-0 constraints 
+          so that inner elements don't stretch the layout vertically.
+        %>
+        <main class="flex-grow flex flex-col h-full min-h-0 overflow-y-auto p-6 md:p-10">
+          <%= yield %>
+        </main>
+
+      </div>
+    <% else %>
+      <main class="flex-grow min-h-0 h-full overflow-y-auto">
+        <%= yield %>
+      </main>
+    <% end %>
+
+    <%= turbo_frame_tag "modal" %>
   </body>
 </html>

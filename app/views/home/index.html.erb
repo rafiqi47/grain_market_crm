@@ -1,6 +1,5 @@
 <div class="h-screen w-full overflow-hidden">
   <div class="relative flex items-center justify-center h-full w-full bg-green-50">
-
     <div class="absolute inset-0 z-0 opacity-40">
       <%= image_tag "grain_market_hero.png",
           alt: "Grain Market CRM Illustration",
@@ -18,7 +17,8 @@
 
       <div class="space-x-4">
         <% if user_signed_in? %>
-          <%= link_to "Go to Dashboard", dashboard_index_path,
+          <%= link_to "Go to Dashboard", role_based_dashboard_path(current_user),
+              data: { turbo_prefetch: "false" },
               class: "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition" %>
         <% else %>
           <%= link_to "Sign In", new_user_session_path,

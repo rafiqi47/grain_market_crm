@@ -1,0 +1,102 @@
+<%= turbo_frame_tag "modal" do %>
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+        id="organization_modal">
+
+    <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">New Enterprise Profile</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Register a brand new organization into the CRM system.</p>
+        </div>
+        <button type="button" onclick="document.getElementById('organization_modal').remove()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <%= form_with model: [:admin, @organization], class: "flex flex-col overflow-hidden m-0" do |f| %>
+        <div class="p-6 space-y-5 overflow-y-auto">
+          <% if @organization.errors.any? %>
+            <div class="rounded-lg bg-red-50 p-4 border border-red-200 shadow-sm animate-fade-in">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h3 class="text-sm font-semibold text-red-800">
+                    Please correct the <%= pluralize(@organization.errors.count, "error") %> below:
+                  </h3>
+                  <div class="mt-1.5 text-xs text-red-700">
+                    <ul role="list" class="list-disc pl-4 space-y-1">
+                      <% @organization.errors.full_messages.each do |message| %>
+                        <li><%= message %></li>
+                      <% end %>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <div>
+            <span class="text-xs font-bold tracking-wider text-indigo-600 uppercase">1. Organization Core</span>
+            <div class="grid grid-cols-1 gap-4 mt-2">
+              <div>
+                <%= f.label :name, "Organization Name *", class: "block text-xs font-semibold text-slate-700 mb-1" %>
+                <%= f.text_field :name, required: true, placeholder: "e.g., GrainCorp International",
+                    class: "block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition shadow-sm" %>
+              </div>
+              <div>
+                <%= f.label :registration_number, "Registration Number (Optional)", class: "block text-xs font-semibold text-slate-700 mb-1" %>
+                <%= f.text_field :registration_number, placeholder: "e.g., REG-9923841",
+                    class: "block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition shadow-sm" %>
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-slate-100" />
+
+          <div>
+            <span class="text-xs font-bold tracking-wider text-emerald-600 uppercase">2. Primary Owner Details</span>
+            <%= f.fields_for :owner do |o| %>
+              <div class="grid grid-cols-1 gap-4 mt-2">
+                <div>
+                  <%= o.label :full_name, "Full Name *", class: "block text-xs font-semibold text-slate-700 mb-1" %>
+                  <%= o.text_field :full_name, required: true, placeholder: "John Doe", 
+                      class: "block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition shadow-sm" %>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <%= o.label :email, "Email Address *", class: "block text-xs font-semibold text-slate-700 mb-1" %>
+                    <%= o.email_field :email, required: true, placeholder: "john@domain.com", 
+                        class: "block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition shadow-sm" %>
+                  </div>
+                  <div>
+                    <%= o.label :phone, "Phone Number *", class: "block text-xs font-semibold text-slate-700 mb-1" %>
+                    <%= o.telephone_field :phone, required: true, placeholder: "+1 (555) 000-0000", 
+                        class: "block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition shadow-sm" %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 flex-shrink-0">
+          <button type="button"
+                  onclick="document.getElementById('organization_modal').remove()"
+                  class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm">
+            Cancel
+          </button>
+          <%= f.submit "Create Organization",
+              class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition shadow-sm cursor-pointer" %>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+<% end %>

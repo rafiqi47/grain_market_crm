@@ -14,10 +14,6 @@
             Logged in as: <strong class="font-medium text-gray-900"><%= current_user.email %></strong>
           </span>
 
-          <%= link_to dashboard_path do %>
-            <%= custom_button(color: "secondary", variant: "outlined") { "Dashboard" } %>
-          <% end %>
-
           <%= button_to destroy_user_session_path, method: :delete, class: "p-0 bg-transparent border-0" do %>
             <%= custom_button(color: "error", variant: "contained", is_submit: true) { "Log out" } %>
           <% end %>

@@ -14,11 +14,13 @@ Rails.application.routes.draw do
 
   # Admin Namespace
   namespace :admin do
-    get "dashboard/index"
     root to: "dashboard#index"
-    resources :users do
-      member do
-        patch :toggle_subscription # For managing user access
+
+    resources :organizations do
+      resources :users, only: [:new, :create, :index] do
+        member do
+          patch :toggle_subscription
+        end
       end
     end
   end

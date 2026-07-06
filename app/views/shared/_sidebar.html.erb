@@ -1,0 +1,66 @@
+<aside data-controller="sidebar-toggle"
+        data-sidebar-toggle-target="container"
+        class="hidden md:flex flex-col w-full md:w-64 bg-gray-900 text-gray-300 h-full max-h-full p-4 space-y-6 transition-all duration-300 ease-in-out relative shadow-xl flex-shrink-0 overflow-hidden">
+        <%# FIX: Changed min-h-screen to h-full max-h-full, and added flex-shrink-0 overflow-hidden %>
+
+  <button data-action="click->sidebar-toggle#toggle"
+          class="hidden md:flex absolute top-5 -right-3 bg-green-500 text-white rounded-full p-1.5 border-2 border-gray-900 hover:bg-green-600 focus:outline-none transition-transform active:scale-95 z-50 shadow-md"
+          title="Toggle Sidebar Layout">
+    <svg data-sidebar-toggle-target="icon" class="w-4 h-4 transition-transform duration-300 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+    </svg>
+  </button>
+
+  <div class="px-2 py-4 border-b border-gray-800 w-full overflow-hidden whitespace-nowrap flex items-center space-x-3 flex-shrink-0">
+    <%# FIX: Added flex-shrink-0 to header box %>
+    <div class="bg-green-500 p-2 rounded-lg text-gray-900 flex-shrink-0">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M7.757 6.364l.707-.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+
+    <div data-sidebar-toggle-target="textOnly" class="transition-opacity duration-200">
+      <h1 class="text-xl font-black text-white tracking-widest uppercase leading-none">Grain CRM</h1>
+      <div class="text-[10px] font-semibold uppercase tracking-wider mt-0.5 <%= request.path.start_with?('/admin') ? 'text-green-400' : 'text-blue-400' %>">
+        <%= request.path.start_with?('/admin') ? 'Admin Portal' : 'User Space' %>
+      </div>
+    </div>
+  </div>
+
+  <%# FIX: Added overflow-y-auto and min-h-0 so navigation itself safely scrolls if the menu grows %>
+  <nav class="flex-1 space-y-2 w-full overflow-y-auto min-h-0 pr-1 custom-scrollbar">
+    <% if current_user.super_admin? %>
+
+      <%= link_to admin_root_path, title: "Manage Organizations",
+                  class: "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-all hover:bg-gray-800 hover:text-white #{'bg-gray-800 text-white' if current_page?(admin_root_path)}" do %>
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/></svg>
+        <span data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">Admin Dashboard</span>
+      <% end %>
+
+      <%= link_to admin_root_path, title: "Manage Organizations",
+                  class: "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-all hover:bg-gray-800 hover:text-white #{'bg-gray-800 text-white' if current_page?(admin_organizations_path)}" do %>
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5"/></svg>
+        <span data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">Manage Orgs</span>
+      <% end %>
+
+    <% else %>
+
+      <%= link_to dashboard_path, title: "My Dashboard",
+                  class: "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-all hover:bg-gray-800 hover:text-white #{'bg-gray-800 text-white' if current_page?(dashboard_path)}" do %>
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/></svg>
+        <span data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">My Dashboard</span>
+      <% end %>
+
+    <% end %>
+  </nav>
+
+  <%# FIX: Added flex-shrink-0 so profile bar is never crushed out of viewport space %>
+  <div class="pt-4 border-t border-gray-800 flex items-center justify-between w-full overflow-hidden flex-shrink-0">
+    <div data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">
+      <p class="text-white font-semibold text-xs">Active Profile</p>
+    </div>
+    <%= link_to destroy_user_session_path, data: { turbo_method: :delete }, title: "Sign Out", class: "text-red-400 hover:text-red-500" do %>
+      <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+    <% end %>
+  </div>
+</aside>
