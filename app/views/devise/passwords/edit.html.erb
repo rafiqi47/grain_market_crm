@@ -1,0 +1,77 @@
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-slate-50">
+  <div class="sm:mx-auto w-full max-w-md">
+    <div class="mx-auto h-12 w-12 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
+      <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+      </svg>
+    </div>
+    <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-slate-900">
+      Set Up Your Account Password
+    </h2>
+    <p class="mt-2 text-center text-sm text-slate-600 max-w">
+      Please configure a strong password to secure your newly created manager or owner dashboard access.
+    </p>
+  </div>
+
+  <div class="mt-8 sm:mx-auto w-full max-w-md">
+    <div class="bg-white py-8 px-4 shadow-sm border border-slate-200 sm:rounded-xl sm:px-10">
+      <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put, class: "space-y-6" }) do |f| %>
+        <%= f.hidden_field :reset_password_token %>
+
+        <% if resource.errors.any? %>
+          <div class="rounded-lg bg-red-50 p-4 border border-red-200">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">
+                  Please correct the following <%= pluralize(resource.errors.count, "error") %>:
+                </h3>
+                <div class="mt-2 text-sm text-red-700 space-y-1">
+                  <% resource.errors.full_messages.each do |message| %>
+                    <p class="list-item list-inside"><%= message %></p>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <div>
+          <%= f.label :password, "New Password", class: "block text-sm font-medium text-slate-700" %>
+          <% if @minimum_password_length %>
+            <p class="mt-1 text-xs text-slate-500">Must be at least <%= @minimum_password_length %> characters long.</p>
+          <% end %>
+          <div class="mt-1">
+            <%= f.password_field :password,
+                                  autofocus: true,
+                                  autocomplete: "new-password",
+                                  class: "block w-full appearance-none rounded-lg border border-slate-300 px-3 py-2 shadow-sm placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm transition duration-150" %>
+          </div>
+        </div>
+
+        <div>
+          <%= f.label :password_confirmation, "Confirm New Password", class: "block text-sm font-medium text-slate-700" %>
+          <div class="mt-1">
+            <%= f.password_field :password_confirmation,
+                                  autocomplete: "new-password",
+                                  class: "block w-full appearance-none rounded-lg border border-slate-300 px-3 py-2 shadow-sm placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm transition duration-150" %>
+          </div>
+        </div>
+
+        <div>
+          <%= f.submit "Activate Account & Sign In",
+                      class: "flex w-full justify-center rounded-lg border border-transparent bg-indigo-600 py-2.5 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 cursor-pointer" %>
+        </div>
+      <% end %>
+
+      <div class="mt-6 border-t border-slate-200 pt-4 text-center">
+        <%= link_to "Back to Login", new_session_path(resource_name), class: "text-xs font-medium text-slate-500 hover:text-indigo-600 transition" %>
+      </div>
+
+    </div>
+  </div>
+</div>
