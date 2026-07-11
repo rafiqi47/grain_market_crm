@@ -1,0 +1,6 @@
+<!-- app/views/suppliers/create.turbo_stream.erb -->
+<%= turbo_stream.replace "modal", turbo_frame_tag("modal") %>
+<%= turbo_stream.replace "flash-container", render(partial: "layouts/flash") %>
+<%= turbo_stream.replace "suppliers_directory_table" do %>
+  <%= render "table", suppliers: current_user.organization.suppliers.order(name: :asc) %>
+<% end %>

@@ -1,0 +1,6 @@
+<%= turbo_stream.replace "modal", turbo_frame_tag("modal") %>
+<%= turbo_stream.replace "flash-container", render(partial: "layouts/flash") %>
+
+<%= turbo_stream.update "products_catalog_table" do %>
+  <%= render "products/table", products: current_user.organization.products.includes(:supplier, :product_batches).order(name: :asc) %>
+<% end %>

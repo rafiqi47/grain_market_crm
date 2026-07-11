@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  organization: one
+  product_batch: one
+  alert_type: 1
+  message: MyString
+  read_at: 2026-07-11 15:37:02
+
+two:
+  organization: two
+  product_batch: two
+  alert_type: 1
+  message: MyString
+  read_at: 2026-07-11 15:37:02

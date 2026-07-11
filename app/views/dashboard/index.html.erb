@@ -1,43 +1,48 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
-    <div class="md:flex md:items-center md:justify-between">
-      <div class="flex-1 min-w-0">
-        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-          Welcome back, <%= current_user.email %>
-        </h2>
-        <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
-          <div class="mt-2 flex items-center text-sm text-gray-500">
-            Current Session View Namespace: 
-            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-              <%= @user_role %> Mode
-            </span>
-          </div>
-        </div>
-      </div>
+<!-- app/views/dashboard/index.html.erb -->
+<div class="container mx-auto px-6 py-8 max-w-7xl">
+  
+  <!-- Header Branding Bar -->
+  <div class="border-b border-gray-200 pb-5 mb-8 flex justify-between items-center">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">Dashboard Overview</h1>
+      <p class="text-sm text-gray-500 mt-1">Enterprise terminal for <span class="font-semibold text-indigo-600"><%= current_user.organization.name %></span></p>
     </div>
   </div>
 
-  <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-    <% if current_user.super_admin? %>
-      <div class="bg-white rounded-xl shadow-sm border-2 border-dashed border-emerald-500 p-6">
-        <h3 class="text-lg font-bold text-gray-900">System Admin Control Center</h3>
-        <p class="mt-2 text-sm text-gray-600">Global multi-tenant system configurations and platform logging flags.</p>
+  <!-- Section: Critical Near-Expiry Alerts Panel -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-10">
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="p-1.5 rounded-md bg-red-50 text-red-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </span>
+        <div>
+          <h2 class="text-base font-bold text-gray-900">Quality Control & Expiration Monitoring</h2>
+          <p class="text-xs text-gray-500">Batches requiring active allocation or stock rotation strategies.</p>
+        </div>
       </div>
-    <% end %>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+        <%= @unread_alerts.count %> flagged items
+      </span>
+    </div>
 
-    <% if current_user.owner? || current_user.super_admin? %>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-bold text-gray-900">Enterprise Operations & Metrics</h3>
-        <p class="mt-2 text-sm text-gray-600">Comprehensive CRM partner allocations, analytical charts, and market setups.</p>
-      </div>
-    <% end %>
-
-    <% if current_user.manager? || current_user.owner? || current_user.super_admin? %>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-bold text-gray-900">Trading Desk Workspace</h3>
-        <p class="mt-2 text-sm text-gray-600">Daily spot pricing quotes, inventory tickers, and customer lead lists.</p>
-      </div>
-    <% end %>
-
+    <div id="inventory_alerts_list" class="divide-y divide-gray-100">
+      <% if @unread_alerts.any? %>
+        <%= render partial: "inventory_alerts/alert", collection: @unread_alerts %>
+      <% else %>
+        <div class="px-6 py-12 text-center text-sm text-gray-500 bg-white">
+          <svg class="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="block font-medium text-gray-700">All inventories clear</span>
+          <p class="text-xs text-gray-400 mt-0.5">No quality distribution lots are expiring within the next 30 days.</p>
+        </div>
+      <% end %>
+    </div>
   </div>
+
 </div>
+
+<%= turbo_frame_tag "modal" %>

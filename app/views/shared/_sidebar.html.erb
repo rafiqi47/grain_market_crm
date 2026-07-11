@@ -1,7 +1,7 @@
+<!-- app/views/layouts/_sidebar.html.erb (or your sidebar file) -->
 <aside data-controller="sidebar-toggle"
         data-sidebar-toggle-target="container"
         class="hidden md:flex flex-col w-full md:w-64 bg-gray-900 text-gray-300 h-full max-h-full p-4 space-y-6 transition-all duration-300 ease-in-out relative shadow-xl flex-shrink-0 overflow-hidden">
-        <%# FIX: Changed min-h-screen to h-full max-h-full, and added flex-shrink-0 overflow-hidden %>
 
   <button data-action="click->sidebar-toggle#toggle"
           class="hidden md:flex absolute top-5 -right-3 bg-green-500 text-white rounded-full p-1.5 border-2 border-gray-900 hover:bg-green-600 focus:outline-none transition-transform active:scale-95 z-50 shadow-md"
@@ -12,7 +12,6 @@
   </button>
 
   <div class="px-2 py-4 border-b border-gray-800 w-full overflow-hidden whitespace-nowrap flex items-center space-x-3 flex-shrink-0">
-    <%# FIX: Added flex-shrink-0 to header box %>
     <div class="bg-green-500 p-2 rounded-lg text-gray-900 flex-shrink-0">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M7.757 6.364l.707-.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -27,7 +26,6 @@
     </div>
   </div>
 
-  <%# FIX: Added overflow-y-auto and min-h-0 so navigation itself safely scrolls if the menu grows %>
   <nav class="flex-1 space-y-2 w-full overflow-y-auto min-h-0 pr-1 custom-scrollbar">
     <% if current_user.super_admin? %>
 
@@ -51,10 +49,22 @@
         <span data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">My Dashboard</span>
       <% end %>
 
+      <!-- NEW: Suppliers Navigation Link -->
+      <%= link_to suppliers_path, title: "Suppliers Directory",
+                  class: "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-all hover:bg-gray-800 hover:text-white #{'bg-gray-800 text-white' if current_page?(suppliers_path) || request.path.start_with?('/suppliers')}" do %>
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">Suppliers Directory</span>
+      <% end %>
+
+      <%= link_to products_path, title: "Product Catalog",
+              class: "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-all hover:bg-gray-800 hover:text-white #{'bg-gray-800 text-white' if current_page?(products_path) || request.path.start_with?('/products') && !request.path.include?('/product_batches')}" do %>
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <span data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">Product Catalog</span>
+      <% end %>
+
     <% end %>
   </nav>
 
-  <%# FIX: Added flex-shrink-0 so profile bar is never crushed out of viewport space %>
   <div class="pt-4 border-t border-gray-800 flex items-center justify-between w-full overflow-hidden flex-shrink-0">
     <div data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">
       <p class="text-white font-semibold text-xs">Active Profile</p>

@@ -1,0 +1,70 @@
+<!-- app/views/inventory_alerts/_alert.html.erb -->
+<div id="<%= dom_id(alert) %>" class="px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white hover:bg-gray-50 transition-colors">
+  
+  <!-- Left Side: Status Dot + Product Context Info -->
+  <div class="flex items-start gap-3.5 flex-1">
+    <div class="mt-1.5 flex-shrink-0">
+      <% if alert.product_batch.expiry_date <= Date.current + 7.days %>
+        <span class="flex h-2.5 w-2.5 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600" title="Immediate Attention Required"></span>
+        </span>
+      <% else %>
+        <span class="flex h-2.5 w-2.5 rounded-full bg-amber-500" title="Approaching Expiration"></span>
+      <% end %>
+    </div>
+
+    <div class="space-y-0.5">
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span class="font-semibold text-gray-900 text-sm">
+          <%= alert.product_batch.product.name %>
+        </span>
+        <span class="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded bg-gray-100 text-gray-600 border border-gray-200">
+          Lot #<%= alert.product_batch.batch_number %>
+        </span>
+      </div>
+      
+      <p class="text-xs text-gray-500">
+        Supplier: <span class="font-medium text-gray-700"><%= alert.product_batch.product.supplier.name %></span> 
+        <span class="mx-1.5 text-gray-300">•</span> 
+        Classification: <span class="capitalize font-medium text-gray-700"><%= alert.product_batch.product.category.humanize %></span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Right Side: Quantities & Expiration Counter -->
+  <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
+    <div class="text-left sm:text-right">
+      <div class="text-sm font-bold text-gray-900">
+        <%= alert.product_batch.quantity_on_hand %> bags
+      </div>
+      <p class="text-[11px] text-gray-400 font-medium">Available Volume</p>
+    </div>
+
+    <div class="text-left sm:text-right min-w-[110px]">
+      <% if alert.product_batch.expiry_date <= Date.current %>
+        <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">
+          Expired
+        </span>
+      <% else %>
+        <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-bold <%= alert.product_batch.expiry_date <= Date.current + 7.days ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200' %>">
+          Expires in <%= (alert.product_batch.expiry_date - Date.current).to_i %> days
+        </span>
+      <% end %>
+      <p class="text-[11px] text-gray-500 font-medium mt-0.5"><%= alert.product_batch.expiry_date.strftime('%b %d, %Y') %></p>
+    </div>
+
+    <!-- Dismiss CTA Button -->
+    <div class="flex-shrink-0">
+      <%= button_to mark_as_read_inventory_alert_path(alert),
+                    method: :patch,
+                    class: "p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all cursor-pointer", 
+                    title: "Acknowledge & Clear Notice" do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      <% end %>
+    </div>
+  </div>
+
+</div>

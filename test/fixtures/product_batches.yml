@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  product: one
+  batch_number: MyString
+  initial_quantity: 1
+  quantity_on_hand: 1
+  manufacture_date: 2026-07-11
+  expiry_date: 2026-07-11
+  purchase_price_per_unit: 9.99
+
+two:
+  product: two
+  batch_number: MyString
+  initial_quantity: 1
+  quantity_on_hand: 1
+  manufacture_date: 2026-07-11
+  expiry_date: 2026-07-11
+  purchase_price_per_unit: 9.99

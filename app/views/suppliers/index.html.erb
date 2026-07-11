@@ -1,0 +1,16 @@
+<!-- app/views/suppliers/index.html.erb -->
+<div class="container mx-auto px-6 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800">Suppliers Directory</h1>
+      <p class="text-xs text-gray-500 mt-1">Manage active supplier records linked to your trade organization portfolio.</p>
+    </div>
+    <%= link_to "Register Supplier", new_supplier_path, class: "px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded shadow hover:bg-indigo-700 transition-colors", data: { turbo_frame: "modal" } %>
+  </div>
+
+  <div id="suppliers_directory_table">
+    <%= render "table", suppliers: @suppliers %>
+  </div>
+</div>
+
+<%= turbo_frame_tag "modal" %>

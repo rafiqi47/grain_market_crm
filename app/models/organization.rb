@@ -2,6 +2,9 @@ class Organization < ApplicationRecord
   has_one   :owner, -> { where(role: :owner) }, class_name: "User", dependent: :destroy, inverse_of: :organization
   has_many  :managers, -> { where(role: :manager) }, class_name: "User", dependent: :destroy, inverse_of: :organization
   has_many  :users, dependent: :destroy, inverse_of: :organization
+  has_many  :suppliers, dependent: :destroy, inverse_of: :organization
+  has_many  :products, dependent: :destroy, inverse_of: :organization
+  has_many  :inventory_alerts, dependent: :destroy
 
   # Allow nested management for onboarding forms
   accepts_nested_attributes_for :owner, reject_if: :all_blank
