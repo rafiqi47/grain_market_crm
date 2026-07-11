@@ -1,0 +1,37 @@
+<%
+  is_hash = item.is_a?(Hash) || item.is_a?(ActionController::Parameters)
+  p_id = is_hash ? item["product_id"] : (item&.product_batch&.product_id)
+  b_id = is_hash ? item["product_batch_id"] : item&.product_batch_id
+  qty  = is_hash ? item["quantity"] : item&.quantity
+  u_p  = is_hash ? item["unit_price"] : item&.unit_price
+%>
+<div class="item-row grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-100 relative">
+  <div class="md:col-span-4">
+    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Product</label>
+    <select name="items[<%= idx %>][product_id]" required class="product-select block w-full rounded-md border-gray-300 shadow-sm text-sm">
+      <option value="">-- Choose Product --</option>
+      <% @products.each do |p| %>
+        <option value="<%= p.id %>" <%= "selected" if p_id.to_s == p.id.to_s %>><%= p.name %></option>
+      <% end %>
+    </select>
+  </div>
+  <div class="md:col-span-3">
+    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Batch</label>
+    <select name="items[<%= idx %>][product_batch_id]" class="batch-select block w-full rounded-md border-gray-300 shadow-sm text-sm" data-selected-id="<%= b_id %>">
+      <option value="">Automated FIFO</option>
+    </select>
+  </div>
+  <div class="md:col-span-2">
+    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Qty</label>
+    <input type="number" name="items[<%= idx %>][quantity]" value="<%= qty %>" required class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
+  </div>
+  <div class="md:col-span-2">
+    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Price</label>
+    <input type="number" step="0.01" name="items[<%= idx %>][unit_price]" value="<%= u_p %>" required class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
+  </div>
+  <div class="md:col-span-1 flex items-end justify-center pb-2">
+    <button type="button" class="remove-item-btn text-red-500 hover:text-red-700">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+    </button>
+  </div>
+</div>

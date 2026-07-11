@@ -38,6 +38,10 @@ Rails.application.routes.draw do
     resources :product_batches, only: [:new, :create, :edit, :update, :destroy]
   end
 
+  resources :sales_orders, only: [:index, :show, :new, :create, :edit, :update, :destroy]
+
+  resources :inventory_adjustments, only: [:index, :new, :create]
+
   resources :inventory_alerts, only: [] do
     member do
       patch :mark_as_read

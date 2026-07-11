@@ -5,8 +5,10 @@ class InventoryAlert < ApplicationRecord
   enum :alert_type, { near_expiry: 0, critical_expiry: 1 }, default: :near_expiry
 
   validates :message, presence: true
+  validates :alert_type, presence: true
 
   scope :unread, -> { where(read_at: nil) }
+  scope :read,   -> { where.not(read_at: nil) }
   scope :latest, -> { order(created_at: :desc) }
 
   def mark_as_read!

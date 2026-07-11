@@ -1,0 +1,145 @@
+<% sales_order ||= SalesOrder.new %>
+
+<div class="bg-white shadow rounded-lg p-6 my-6 border border-gray-200">
+  <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+      <%= sales_order.persisted? ? "Edit Outbound Sales Order: #{sales_order.order_number}" : "Create Outbound Sales Order" %>
+    </h2>
+    <%= link_to "← Back to Orders", sales_orders_path, class: "text-sm font-medium text-gray-500 hover:text-gray-700 transition" %>
+  </div>
+
+  <%= form_with url: url, method: method, local: true, class: "space-y-6" do |f| %>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700">Customer Name</label>
+      <%= f.text_field :customer_name, value: params[:customer_name] || sales_order.customer_name, required: true, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" %>
+    </div>
+
+    <div class="border-t border-gray-200 pt-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-gray-900">Line Items Manifest</h3>
+        <button type="button" id="add-item-btn" class="inline-flex items-center bg-gray-900 hover:bg-black text-white text-xs font-bold py-2 px-4 rounded-md shadow-sm transition">
+          Add Another Line Item
+        </button>
+      </div>
+      
+      <div id="items-container" class="space-y-4">
+        <% current_items = @submitted_items&.values || (sales_order.persisted? ? @line_items : [SalesLineItem.new]) %>
+        <% current_items.each_with_index do |item, idx| %>
+          <%= render partial: "sales_orders/item_row", locals: { idx: idx, item: item } %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="flex justify-end pt-4 border-t border-gray-100">
+      <%= f.submit "Save Transaction", class: "bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-md shadow-md transition cursor-pointer" %>
+    </div>
+  <% end %>
+</div>
+
+<template id="item-row-template">
+  <%= render partial: "sales_orders/item_row", locals: { idx: "INDEX", item: nil } %>
+</template>
+
+<script>
+  document.addEventListener("turbo:load", function() {
+    const container = document.getElementById("items-container");
+    const addButton = document.getElementById("add-item-btn");
+    const template = document.getElementById("item-row-template");
+
+    if (!container || !addButton || !template) return;
+
+    // Destroy old button and replace with fresh clone to prevent duplicate listeners
+    const freshAddButton = addButton.cloneNode(true);
+    addButton.parentNode.replaceChild(freshAddButton, addButton);
+
+    const inventoryData = {
+      <% @products.each do |product| %>
+        "<%= product.id %>": [
+          <% product.product_batches.each do |batch| %>
+            { id: "<%= batch.id %>", label: "Lot: <%= escape_javascript(batch.batch_number) %> [Avail: <%= batch.quantity_on_hand %>]" },
+          <% end %>
+        ],
+      <% end %>
+    };
+
+    function toggleSubmitButton() {
+      const submitButton = document.querySelector('input[type="submit"]');
+      const rowCount = container.querySelectorAll(".item-row").length;
+      if (submitButton) {
+        submitButton.disabled = rowCount === 0;
+        submitButton.style.opacity = rowCount === 0 ? "0.5" : "1";
+        submitButton.style.cursor = rowCount === 0 ? "not-allowed" : "pointer";
+      }
+    }
+
+    function setupRow(row) {
+      const removeBtn = row.querySelector(".remove-item-btn");
+      if (removeBtn) {
+        removeBtn.addEventListener("click", function() {
+          row.remove();
+          reindexRows();
+          toggleSubmitButton();
+        });
+      }
+    }
+
+    function filterBatches(row, isInitialLoad = false) {
+      const productSelect = row.querySelector(".product-select");
+      const batchSelect = row.querySelector(".batch-select");
+      if (!productSelect || !batchSelect) return;
+
+      const selectedProductId = productSelect.value;
+      const previouslySelectedId = batchSelect.getAttribute("data-selected-id");
+      batchSelect.innerHTML = '<option value="">Automated FIFO (Oldest First)</option>';
+
+      if (selectedProductId && inventoryData[selectedProductId]) {
+        inventoryData[selectedProductId].forEach(batch => {
+          const option = document.createElement("option");
+          option.value = batch.id;
+          option.textContent = batch.label;
+          if (isInitialLoad && previouslySelectedId === String(batch.id)) option.selected = true;
+          batchSelect.appendChild(option);
+        });
+      }
+    }
+
+    function reindexRows() {
+      container.querySelectorAll(".item-row").forEach((row, newIdx) => {
+        row.querySelectorAll("[name]").forEach(el => {
+          el.name = el.name.replace(/items\[\d+\]/, `items[${newIdx}]`);
+        });
+      });
+    }
+
+    // Initialize existing rows
+    container.querySelectorAll(".item-row").forEach(row => {
+      filterBatches(row, true);
+      setupRow(row);
+    });
+
+    // Delegated event for product change
+    container.addEventListener("change", (e) => {
+      if (e.target.classList.contains("product-select")) {
+        filterBatches(e.target.closest(".item-row"));
+      }
+    });
+
+    // Add new row listener
+    freshAddButton.addEventListener("click", function(event) {
+      event.preventDefault();
+      const index = container.querySelectorAll(".item-row").length;
+      let clone = template.content.cloneNode(true);
+      
+      clone.querySelectorAll("[name]").forEach(el => {
+        el.name = el.name.replace("INDEX", index);
+      });
+      
+      const newRow = clone.querySelector(".item-row");
+      setupRow(newRow);
+      container.appendChild(clone);
+      toggleSubmitButton();
+    });
+
+    toggleSubmitButton();
+  });
+</script>

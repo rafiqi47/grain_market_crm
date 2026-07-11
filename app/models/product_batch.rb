@@ -1,7 +1,10 @@
+# app/models/product_batch.rb
 class ProductBatch < ApplicationRecord
   # Relations
   belongs_to :product, inverse_of: :product_batches
+  belongs_to :organization, optional: true # High-speed multi-tenant shortcut query layer
   has_many   :inventory_alerts, dependent: :destroy
+  has_many   :inventory_adjustments, dependent: :destroy
 
   # Validations
   validates :batch_number, presence: true

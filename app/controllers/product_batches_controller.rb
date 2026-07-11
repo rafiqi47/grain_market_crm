@@ -8,7 +8,7 @@ class ProductBatchesController < ApplicationController
   end
 
   def create
-    @product_batch = @product.product_batches.build(product_batch_params)
+    @product_batch = @product.product_batches.build(product_batch_params.merge(organization_id: current_user.organization.id))
     @product_batch.quantity_on_hand = @product_batch.initial_quantity
 
     if @product_batch.save

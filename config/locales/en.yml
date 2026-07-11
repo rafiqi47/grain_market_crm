@@ -29,3 +29,14 @@
 
 en:
   hello: "Hello world"
+  number:
+    currency:
+      format:
+        # Change this to your custom symbol (e.g., £, €, PKR, Custom, etc.)
+        unit: "Rs. "
+        # Options: "%u%n" for "Rs. 100.00" or "%n %u" for "100.00 Rs."
+        format: "%u%n"
+        separator: "."
+        delimiter: ","
+        precision: 2
+        strip_insignificant_zeros: false

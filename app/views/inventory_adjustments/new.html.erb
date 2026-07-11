@@ -1,0 +1,46 @@
+<!-- app/views/inventory_adjustments/new.html.erb -->
+<div class="max-w-2xl mx-auto bg-white shadow rounded-lg p-6 my-6">
+  <h2 class="text-2xl font-bold text-gray-900 mb-6">Log Stock Adjustment Event</h2>
+
+  <%= form_with url: inventory_adjustments_path, method: :post, local: true, class: "space-y-6" do |f| %>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700">Select Target Inventory Lot</label>
+      <select name="product_batch_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-green-500 focus:border-green-500">
+        <option value="">-- Select Product Batch --</option>
+        <% @batches.each do |batch| %>
+          <option value="<%= batch.id %>">
+            <%= batch.product.name %> (Lot: <%= batch.batch_number %>) — Available Qty: <%= batch.quantity_on_hand %>
+          </option>
+        <% end %>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700">Adjustment Event Reason</label>
+        <select name="reason" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-green-500 focus:border-green-500">
+          <option value="damaged_goods">Damaged Goods (Deduction)</option>
+          <option value="spillage_or_leakage">Spillage or Leakage (Deduction)</option>
+          <option value="supplier_return">Supplier Return (Deduction)</option>
+          <option value="customer_return">Customer Return (Addition)</option>
+          <option value="audit_correction">Audit Correction (Addition/Deduction)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700">Quantity Change (Delta)</label>
+        <%= f.number_field :quantity_changed, required: true, placeholder: "e.g., -5 or 12", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-green-500 focus:ring-green-500" %>
+        <p class="text-xs text-gray-400 mt-1">Use a negative value to deduct stock or a positive value to add to it.</p>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700">Audit Notes / Explanatory Justification</label>
+      <%= f.text_area :notes, required: true, rows: 3, placeholder: "Describe exactly why this stock adjustment is occurring...", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-green-500 focus:ring-green-500" %>
+    </div>
+
+    <div class="flex justify-end pt-4 border-t border-gray-100">
+      <%= f.submit "Commit Ledger Adjustment", class: "bg-gray-900 hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-md shadow transition" %>
+    </div>
+  <% end %>
+</div>
