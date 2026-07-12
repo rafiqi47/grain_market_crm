@@ -1,9 +1,17 @@
 # app/controllers/suppliers_controller.rb
 class SuppliersController < ApplicationController
-  before_action :set_supplier, only: [:edit, :update]
+  # Added :show to the before_action lookup array
+  before_action :set_supplier, only: [:show, :edit, :update]
 
   def index
     @suppliers = current_user.organization.suppliers.order(name: :asc)
+  end
+
+  # NEW: Profile & Running Khaata Statement Stream View
+  def show
+    @ledger_entries = @supplier.supplier_ledgers
+                               .includes(:purchase_order)
+                               .latest
   end
 
   def new

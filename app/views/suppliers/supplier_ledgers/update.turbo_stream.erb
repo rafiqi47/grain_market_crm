@@ -1,0 +1,14 @@
+<!-- app/views/suppliers/supplier_ledgers/update.turbo_stream.erb -->
+<%= turbo_stream.replace "supplier_balance_card" do %>
+  <%= render "suppliers/balance_card", supplier: @supplier %>
+<% end %>
+
+<%= turbo_stream.replace "ledger_entries_rows" do %>
+  <tbody id="ledger_entries_rows" class="bg-white divide-y divide-gray-200 font-mono text-sm">
+    <%= render "suppliers/ledger_rows", supplier: @supplier, ledger_entries: @supplier.supplier_ledgers.chronological %>
+  </tbody>
+<% end %>
+
+<%= turbo_stream.replace "modal" do %>
+  <%= turbo_frame_tag "modal" %>
+<% end %>

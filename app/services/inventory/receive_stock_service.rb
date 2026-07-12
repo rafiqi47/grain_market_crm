@@ -6,39 +6,52 @@ module Inventory
     def initialize(organization:, supplier:, order_params:, batches_params:)
       @organization = organization
       @supplier = supplier
-      @order_params = order_params     # e.g., { total_amount: 5000.00, amount_paid: 2000.00, amount_on_credit: 3000.00, transaction_date: Date.today, invoice_number: "INV-99" }
-      @batches_params = batches_params # Array of hashes: [{ product_id: 1, batch_number: "B1", initial_quantity: 100, quantity_on_hand: 100, expiry_date: Date.today + 1.year, purchase_price_per_unit: 50.00 }]
+      @order_params = order_params     
+      @batches_params = batches_params 
       @errors = []
     end
 
     def call
       ActiveRecord::Base.transaction do
-        # 1. Instantiate the Purchase Summary Document
+        # 1. Pessimistic row locking to prevent race conditions during concurrent transactions
+        @supplier.lock!
+
+        # 2. Instantiate the Purchase Summary Document
         purchase_order = @organization.purchase_orders.create!(@order_params.merge(supplier: @supplier))
 
-        # 2. Build out all nested product batches matching incoming goods
+        # 3. Build out all nested product batches matching incoming goods
         @batches_params.each do |batch_attr|
           @organization.product_batches.create!(batch_attr)
         end
 
-        # 3. Handle credit tracking logic (Khaata allocation)
-        if purchase_order.amount_on_credit > 0
-          # Row locking to prevent race conditions during heavy parallel updates
-          @supplier.lock!
+        # 4. Record Liability Increase (The entire bulk purchase value)
+        running_balance = @supplier.current_balance + purchase_order.total_amount
+        
+        @organization.supplier_ledgers.create!(
+          supplier: @supplier,
+          purchase_order: purchase_order,
+          entry_type: :purchase,
+          amount: purchase_order.total_amount,
+          resulting_balance: running_balance,
+          description: "Bulk stock ingestion via Invoice ##{purchase_order.invoice_number || 'N/A'}"
+        )
 
-          new_balance = @supplier.current_balance + purchase_order.amount_on_credit
-          @supplier.update!(current_balance: new_balance)
-
-          # 4. Append to ledger event stream
+        # 5. Record Cash Clearing Settlement (If any downpayment/cash was paid upfront)
+        if purchase_order.amount_paid > 0
+          running_balance -= purchase_order.amount_paid
+          
           @organization.supplier_ledgers.create!(
             supplier: @supplier,
             purchase_order: purchase_order,
-            entry_type: :purchase,
-            amount: purchase_order.amount_on_credit,
-            resulting_balance: new_balance,
-            description: "Stock ingested via Invoice ##{purchase_order.invoice_number}"
+            entry_type: :payment,
+            amount: purchase_order.amount_paid,
+            resulting_balance: running_balance,
+            description: "Upfront cash settlement for Invoice ##{purchase_order.invoice_number || 'N/A'}"
           )
         end
+
+        # 6. Synchronize the final persistent supplier balance field
+        @supplier.update!(current_balance: running_balance)
 
         purchase_order
       end

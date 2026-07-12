@@ -9,4 +9,8 @@ class SupplierLedger < ApplicationRecord
   validates :amount, presence: true, numericality: { greater_than: 0 }
   validates :resulting_balance, presence: true, numericality: true
   validates :entry_type, presence: true
+
+  # Sorting scope to view the ledger stream exactly as it happened
+  scope :chronological, -> { order(created_at: :asc, id: :asc) }
+  scope :latest, -> { order(created_at: :desc, id: :desc) }
 end

@@ -1,0 +1,5 @@
+<!-- app/views/suppliers/_balance_card.html.erb -->
+<span class="block text-[10px] font-bold text-gray-400 uppercase">Current Balance</span>
+<span class="text-xl font-black font-mono <%= supplier.current_balance > 0 ? 'text-red-600' : 'text-emerald-700' %>">
+  Rs. <%= number_with_delimiter(supplier.current_balance) %>
+</span>

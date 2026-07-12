@@ -1,0 +1,17 @@
+<!-- app/views/suppliers/supplier_ledgers/create.turbo_stream.erb -->
+<!-- 1. Refresh the balance profile display card -->
+<%= turbo_stream.replace "supplier_balance_card" do %>
+  <%= render "suppliers/balance_card", supplier: @supplier %>
+<% end %>
+
+<!-- 2. Refresh the entire cascading ledger log container list -->
+<%= turbo_stream.replace "ledger_entries_rows" do %>
+  <tbody id="ledger_entries_rows" class="bg-white divide-y divide-gray-200 font-mono text-sm">
+    <%= render "suppliers/ledger_rows", supplier: @supplier, ledger_entries: @supplier.supplier_ledgers.chronological %>
+  </tbody>
+<% end %>
+
+<!-- 3. Auto-close the frame modal container -->
+<%= turbo_stream.replace "modal" do %>
+  <%= turbo_frame_tag "modal" %>
+<% end %>

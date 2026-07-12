@@ -33,7 +33,10 @@ Rails.application.routes.draw do
 
   get "dashboard", to: "dashboard#index", as: :dashboard
 
-  resources :suppliers, only: [:index, :new, :create, :edit, :update]
+  resources :suppliers, only: [:index, :show, :new, :create, :edit, :update] do
+    resources :supplier_ledgers, only: [:new, :create, :edit, :update, :destroy], controller: "suppliers/supplier_ledgers"
+  end
+
   resources :products do
     resources :product_batches, only: [:new, :create, :edit, :update, :destroy]
   end
