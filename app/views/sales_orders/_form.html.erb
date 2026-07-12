@@ -1,37 +1,75 @@
 <% sales_order ||= SalesOrder.new %>
 
-<div class="bg-white shadow rounded-lg p-6 my-6 border border-gray-200">
-  <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-    <h2 class="text-2xl font-black text-gray-900 tracking-tight">
-      <%= sales_order.persisted? ? "Edit Outbound Sales Order: #{sales_order.order_number}" : "Create Outbound Sales Order" %>
-    </h2>
-    <%= link_to "← Back to Orders", sales_orders_path, class: "text-sm font-medium text-gray-500 hover:text-gray-700 transition" %>
+<div class="my-8 px-4 sm:px-6">
+  <div class="md:flex md:items-center md:justify-between mb-8 border-b border-gray-200 pb-5">
+    <div class="flex-1 min-w-0">
+      <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate tracking-tight">
+        <%= sales_order.persisted? ? "Edit Outbound Sales Order" : "Create Outbound Sales Order" %>
+      </h2>
+      <% if sales_order.persisted? %>
+        <p class="mt-1 text-sm text-gray-500 font-mono">
+          Manifest Designation: <span class="bg-gray-100 px-2 py-0.5 rounded text-gray-700 font-bold"><%= sales_order.order_number %></span>
+        </p>
+      <% end %>
+    </div>
+    <div class="mt-4 flex md:mt-0 md:ml-4">
+      <%= link_to sales_orders_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors" do %>
+        <svg class="-ml-1 mr-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Back to Orders
+      <% end %>
+    </div>
   </div>
 
-  <%= form_with url: url, method: method, local: true, class: "space-y-6" do |f| %>
-    <div>
-      <label class="block text-sm font-semibold text-gray-700">Customer Name</label>
-      <%= f.text_field :customer_name, value: params[:customer_name] || sales_order.customer_name, required: true, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" %>
+  <%= form_with url: url, method: method, local: true, class: "space-y-8" do |f| %>
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+      <div class="px-4 py-6 sm:p-8">
+        <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+          <div class="sm:col-span-4">
+            <label for="customer_name" class="block text-sm font-semibold leading-6 text-gray-900">Customer Legal Name</label>
+            <div class="mt-2">
+              <%= f.text_field :customer_name, value: params[:customer_name] || sales_order.customer_name, required: true, placeholder: "e.g., Habib Grains Ltd. / Al-Murtaza Millers", class: "block w-full rounded-lg border-0 p-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 transition" %>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="border-t border-gray-200 pt-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900">Line Items Manifest</h3>
-        <button type="button" id="add-item-btn" class="inline-flex items-center bg-gray-900 hover:bg-black text-white text-xs font-bold py-2 px-4 rounded-md shadow-sm transition">
-          Add Another Line Item
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+      <div class="border-b border-gray-200 px-4 py-5 sm:px-8 flex justify-between items-center bg-gray-50 sm:rounded-t-xl">
+        <div>
+          <h3 class="text-base font-semibold leading-6 text-gray-900">Line Items Manifest</h3>
+          <p class="mt-1 text-sm text-gray-500">Add physical inventory allocations and select dynamic FIFO options or specific tracking lots.</p>
+        </div>
+        <button type="button" id="add-item-btn" class="inline-flex items-center px-3.5 py-2 border border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-gray-900 hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 transition-colors">
+          <svg class="-ml-0.5 mr-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add Line Item
         </button>
       </div>
-      
-      <div id="items-container" class="space-y-4">
-        <% current_items = @submitted_items&.values || (sales_order.persisted? ? @line_items : [SalesLineItem.new]) %>
-        <% current_items.each_with_index do |item, idx| %>
-          <%= render partial: "sales_orders/item_row", locals: { idx: idx, item: item } %>
-        <% end %>
+
+      <div class="p-4 sm:p-8 space-y-4">
+        <div id="items-container" class="space-y-4">
+          <% current_items = @submitted_items&.values || (sales_order.persisted? ? @line_items : [SalesLineItem.new]) %>
+          <% current_items.each_with_index do |item, idx| %>
+            <%= render partial: "sales_orders/item_row", locals: { idx: idx, item: item } %>
+          <% end %>
+        </div>
+
+        <div id="empty-state-placeholder" class="hidden text-center py-12 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          <h3 class="mt-2 text-sm font-semibold text-gray-900">No line items added</h3>
+          <p class="mt-1 text-sm text-gray-500">Get started by adding an item row to this outbound manifest transaction.</p>
+        </div>
       </div>
     </div>
 
-    <div class="flex justify-end pt-4 border-t border-gray-100">
-      <%= f.submit "Save Transaction", class: "bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-md shadow-md transition cursor-pointer" %>
+    <div class="flex items-center justify-end gap-x-4 border-t border-gray-900/10 pt-6">
+      <%= f.submit "Save Transaction", class: "rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-all cursor-pointer" %>
     </div>
   <% end %>
 </div>
@@ -45,17 +83,19 @@
     const container = document.getElementById("items-container");
     const addButton = document.getElementById("add-item-btn");
     const template = document.getElementById("item-row-template");
+    const emptyState = document.getElementById("empty-state-placeholder");
 
     if (!container || !addButton || !template) return;
 
-    // Destroy old button and replace with fresh clone to prevent duplicate listeners
+    // Clone button to sweep stale event listeners cleanly
     const freshAddButton = addButton.cloneNode(true);
     addButton.parentNode.replaceChild(freshAddButton, addButton);
 
+    // Dynamic Rails Inventory JSON Mapping 
     const inventoryData = {
-      <% @products.each do |product| %>
+      <% (@products || []).each do |product| %>
         "<%= product.id %>": [
-          <% product.product_batches.each do |batch| %>
+          <% product.product_batches.active.each do |batch| %>
             { id: "<%= batch.id %>", label: "Lot: <%= escape_javascript(batch.batch_number) %> [Avail: <%= batch.quantity_on_hand %>]" },
           <% end %>
         ],
@@ -65,17 +105,28 @@
     function toggleSubmitButton() {
       const submitButton = document.querySelector('input[type="submit"]');
       const rowCount = container.querySelectorAll(".item-row").length;
+      
       if (submitButton) {
         submitButton.disabled = rowCount === 0;
         submitButton.style.opacity = rowCount === 0 ? "0.5" : "1";
         submitButton.style.cursor = rowCount === 0 ? "not-allowed" : "pointer";
       }
+
+      if (emptyState) {
+        if (rowCount === 0) {
+          emptyState.classList.remove("hidden");
+        } else {
+          emptyState.classList.add("hidden");
+        }
+      }
     }
 
     function setupRow(row) {
+      if (!row) return;
       const removeBtn = row.querySelector(".remove-item-btn");
       if (removeBtn) {
-        removeBtn.addEventListener("click", function() {
+        removeBtn.addEventListener("click", function(e) {
+          e.preventDefault();
           row.remove();
           reindexRows();
           toggleSubmitButton();
@@ -84,6 +135,7 @@
     }
 
     function filterBatches(row, isInitialLoad = false) {
+      if (!row) return;
       const productSelect = row.querySelector(".product-select");
       const batchSelect = row.querySelector(".batch-select");
       if (!productSelect || !batchSelect) return;
@@ -97,7 +149,7 @@
           const option = document.createElement("option");
           option.value = batch.id;
           option.textContent = batch.label;
-          if (isInitialLoad && previouslySelectedId === String(batch.id)) option.selected = true;
+          if (isInitialLoad && String(previouslySelectedId) === String(batch.id)) option.selected = true;
           batchSelect.appendChild(option);
         });
       }
@@ -106,37 +158,47 @@
     function reindexRows() {
       container.querySelectorAll(".item-row").forEach((row, newIdx) => {
         row.querySelectorAll("[name]").forEach(el => {
-          el.name = el.name.replace(/items\[\d+\]/, `items[${newIdx}]`);
+          el.name = el.name.replace(/items\[\d+\]|items\[INDEX\]/, `items[${newIdx}]`);
         });
       });
     }
 
-    // Initialize existing rows
+    // Initialize Active Form Elements
     container.querySelectorAll(".item-row").forEach(row => {
       filterBatches(row, true);
       setupRow(row);
     });
 
-    // Delegated event for product change
+    // Delegated Change Tracking Loop
     container.addEventListener("change", (e) => {
       if (e.target.classList.contains("product-select")) {
         filterBatches(e.target.closest(".item-row"));
       }
     });
 
-    // Add new row listener
+    // Insertion Handler
     freshAddButton.addEventListener("click", function(event) {
       event.preventDefault();
       const index = container.querySelectorAll(".item-row").length;
       let clone = template.content.cloneNode(true);
-      
+
+      // Safety handling if partial does not have .item-row top container
+      let rootEl = clone.querySelector(".item-row") || clone.firstElementChild;
+      if (rootEl && !rootEl.classList.contains("item-row")) {
+        rootEl.classList.add("item-row");
+      }
+
       clone.querySelectorAll("[name]").forEach(el => {
         el.name = el.name.replace("INDEX", index);
       });
-      
-      const newRow = clone.querySelector(".item-row");
-      setupRow(newRow);
+
+      setupRow(rootEl);
       container.appendChild(clone);
+
+      // Re-query inserted node to ensure accurate state execution context
+      const newlyCreatedRow = container.lastElementChild;
+      filterBatches(newlyCreatedRow);
+      reindexRows();
       toggleSubmitButton();
     });
 

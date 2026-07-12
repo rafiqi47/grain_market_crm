@@ -16,4 +16,4 @@ production:
 
   inventory_expiry_scan:
     class: InventoryExpiryScanJob
-    schedule: "0 0 * * *" # Triggers nightly at midnight
+    schedule: every 1.day at 00:00

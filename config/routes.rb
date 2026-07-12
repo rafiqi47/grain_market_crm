@@ -40,7 +40,9 @@ Rails.application.routes.draw do
 
   resources :sales_orders, only: [:index, :show, :new, :create, :edit, :update, :destroy]
 
-  resources :inventory_adjustments, only: [:index, :new, :create]
+  resources :inventory_adjustments, only: [:index, :new, :create, :edit, :update] do
+    post :reverse, on: :member
+  end
 
   resources :inventory_alerts, only: [] do
     member do

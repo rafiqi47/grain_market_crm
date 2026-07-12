@@ -29,4 +29,30 @@ class InventoryAdjustmentsController < ApplicationController
       render :new, status: :unprocessable_entity
     end
   end
+
+  def edit
+    @adjustment = current_user.organization.inventory_adjustments.find(params[:id])
+  end
+
+  def update
+    @adjustment = current_user.organization.inventory_adjustments.find(params[:id])
+
+    # Logic: Use a service to handle the reversal of the old adjustment
+    # and the application of the new one to keep stock accurate.
+    if Inventory::UpdateAdjustmentService.new(@adjustment, adjustment_params).call
+      redirect_to inventory_adjustments_path, notice: "Ledger entry updated."
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def reverse
+    @adjustment = current_user.organization.inventory_adjustments.find(params[:id])
+
+    if Inventory::ReverseAdjustmentService.new(@adjustment, current_user).call
+      redirect_to inventory_adjustments_path, notice: "Adjustment has been reversed successfully."
+    else
+      redirect_to inventory_adjustments_path, alert: "Reversal failed."
+    end
+  end
 end

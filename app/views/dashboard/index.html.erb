@@ -30,14 +30,11 @@
 
     <div id="inventory_alerts_list" class="divide-y divide-gray-100">
       <% if @unread_alerts.any? %>
-        <%= render partial: "inventory_alerts/alert", collection: @unread_alerts %>
+        <%= render partial: "inventory_alerts/alert", collection: @unread_alerts, as: :alert %>
       <% else %>
-        <div class="px-6 py-12 text-center text-sm text-gray-500 bg-white">
-          <svg class="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+        <div id="no_alerts_message" class="px-6 py-12 text-center text-sm text-gray-500 bg-white">
+          <!-- Your existing "All inventories clear" SVG and text -->
           <span class="block font-medium text-gray-700">All inventories clear</span>
-          <p class="text-xs text-gray-400 mt-0.5">No quality distribution lots are expiring within the next 30 days.</p>
         </div>
       <% end %>
     </div>

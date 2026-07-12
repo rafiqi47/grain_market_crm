@@ -5,6 +5,7 @@ class ProductBatch < ApplicationRecord
   belongs_to :organization, optional: true # High-speed multi-tenant shortcut query layer
   has_many   :inventory_alerts, dependent: :destroy
   has_many   :inventory_adjustments, dependent: :destroy
+  has_many   :sales_line_items, dependent: :destroy
 
   # Validations
   validates :batch_number, presence: true

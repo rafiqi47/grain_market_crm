@@ -6,11 +6,12 @@ class User < ApplicationRecord
   enum :role, { manager: 0, owner: 1, super_admin: 2 }, default: :manager
 
   belongs_to :organization, optional: true, inverse_of: :users
+  has_many   :inventory_adjustments, dependent: :destroy
 
   validates :full_name, presence: true
   validates :organization, presence: true, if: -> { owner? || manager? }
   validates :organization, absence: true, if: :super_admin?
-  validate :ensure_unique_owner_per_org, if: :owner?
+  validate  :ensure_unique_owner_per_org, if: :owner?
 
   # SAFEST APPROACH: Fires only after the record is written to the DB on creation.
   # Checking 'id' in previously_inserted_ids or previous_changes ensures it never loops on update saves.

@@ -15,23 +15,36 @@ module Inventory
 
     def call
       ActiveRecord::Base.transaction do
-        # 1. Row-lock the targeted batch inside the tenant fence
         batch = @organization.product_batches.lock.find(@product_batch_id)
 
+        # 1. Determine the actual change (logic from previous step)
+        deduction_reasons = ['damaged_goods', 'spillage_or_leakage', 'supplier_return']
+        actual_change = if deduction_reasons.include?(@reason)
+                          -@quantity_changed.abs
+                        else
+                          @quantity_changed.abs
+                        end
+
+        projected_qty = batch.quantity_on_hand + actual_change
+
         # 2. Safety Check: Verify the adjustment doesn't drop inventory below zero
-        projected_qty = batch.quantity_on_hand + @quantity_changed
         if projected_qty < 0
-          raise StandardError, "Adjustment rejected: Action would drop stock below zero. Current: #{batch.quantity_on_hand}, Requested: #{@quantity_changed}"
+          raise StandardError, "Adjustment rejected: Action would drop stock below zero."
         end
 
-        # 3. Apply change to the batch
+        # 3. New Safety Check: Verify the adjustment doesn't exceed initial quantity
+        if projected_qty > batch.initial_quantity
+          raise StandardError, "Adjustment rejected: Action would exceed initial batch quantity of #{batch.initial_quantity}."
+        end
+
+        # 4. Apply change to the batch
         batch.update!(quantity_on_hand: projected_qty)
 
-        # 4. Generate the historical audit entry
+        # 5. Generate the historical audit entry
         adjustment = @organization.inventory_adjustments.create!(
           product_batch: batch,
           user: @user,
-          quantity_changed: @quantity_changed,
+          quantity_changed: actual_change,
           adjustment_reason: @reason,
           notes: @notes
         )
