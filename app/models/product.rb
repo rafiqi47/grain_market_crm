@@ -21,6 +21,27 @@ class Product < ApplicationRecord
   validates :name, presence: true
   validates :category, presence: true
   validates :sku, uniqueness: { scope: :organization_id }, allow_blank: true
+  validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
+
+  # Scopes
+  scope :low_stock, -> {
+    joins(:product_batches)
+      .group('products.id')
+      .having('SUM(product_batches.quantity_on_hand) < products.reorder_threshold')
+  }
+
+  #Methods
+  def low_stock?
+    total_quantity_on_hand < reorder_threshold
+  end
+
+  def suggested_reorder_quantity
+    return 0 unless low_stock?
+
+    # Example Procurement Formula: Reorder Threshold + Base Minimum Buffer - Current Stock
+    # For DAP: Threshold 50, Current 45 -> Suggests ordering enough to replenish significantly
+    (reorder_threshold * 2) - total_quantity_on_hand
+  end
 
   # REQUIREMENT: Combined view utility method
   def total_quantity_on_hand
