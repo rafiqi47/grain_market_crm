@@ -61,6 +61,6 @@ class ProductsController < ApplicationController
   end
 
   def product_params
-    params.require(:product).permit(:name, :sku, :category, :supplier_id, :reorder_threshold)
+    params.require(:product).permit(:name, :sku, :category, :supplier_id, :reorder_threshold, :slug)
   end
 end

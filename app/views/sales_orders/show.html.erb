@@ -1,13 +1,20 @@
-<div class="space-y-6 p-6">
-  <div class="flex items-center justify-between">
+<!-- app/views/sales_orders/show.html.erb -->
+<div class="space-y-6 p-6 print:p-0 print:space-y-0">
+  
+  <!-- Navigation Controls (Hidden during physical paper print actions) -->
+  <div class="flex items-center justify-between print:hidden">
     <%= link_to "← Back to Sales Orders", sales_orders_path, class: "text-sm text-gray-500 hover:text-gray-700 font-medium transition" %>
     <div class="flex items-center space-x-3">
+      <button onclick="window.print();" class="text-xs font-bold bg-emerald-600 text-white px-3 py-1.5 rounded border border-emerald-700 hover:bg-emerald-700 transition cursor-pointer">
+        Print Invoice / بل پرنٹ کریں
+      </button>
       <%= link_to "Modify Order", edit_sales_order_path(@sales_order), class: "text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1.5 rounded border border-blue-200 hover:bg-blue-100 transition" %>
       <span class="text-xs text-gray-400 font-mono">ID: <%= @sales_order.id %></span>
     </div>
   </div>
 
-  <div class="bg-white shadow rounded-lg p-6 border border-gray-200 space-y-6">
+  <!-- Standard Screen View Block (Hidden on print) -->
+  <div class="bg-white shadow rounded-lg p-6 border border-gray-200 space-y-6 print:hidden">
     <!-- Header Summary Block -->
     <div class="border-b border-gray-100 pb-4 flex justify-between items-start">
       <div>
@@ -36,17 +43,23 @@
           <tbody class="divide-y divide-gray-100 bg-white text-gray-700">
             <% grand_total = 0 %>
             <% @sales_order.sales_line_items.includes(product_batch: :product).each do |item| %>
+              <% is_commodity = %w[seed oil_cake wanda].include?(item.product_batch.product.category.to_s) %>
               <% line_total = item.quantity * item.unit_price %>
               <% grand_total += line_total %>
               <tr>
-                <td class="px-4 py-3 font-semibold text-gray-900"><%= item.product_batch.product.name %></td>
+                <td class="px-4 py-3 font-semibold text-gray-900">
+                  <%= item.product_batch.product.name %>
+                  <% if item.product_batch.product.respond_to?(:slug) && item.product_batch.product.slug.present? %>
+                    <span class="text-gray-400 font-normal">/ <%= item.product_batch.product.slug %></span>
+                  <% end %>
+                </td>
                 <td class="px-4 py-3 font-mono text-xs">
                   <span class="bg-gray-100 text-gray-800 px-2 py-0.5 rounded">
-                    Lot: <%= item.product_batch.batch_number %>
+                    Lot: <%= item.product_batch.batch_number.presence || 'Loose Stock' %>
                   </span>
                 </td>
-                <td class="px-4 py-3 text-right font-medium"><%= item.quantity %> units</td>
-                <td class="px-4 py-3 text-right font-mono text-gray-500"><%= number_to_currency(item.unit_price, unit: "") %></td>
+                <td class="px-4 py-3 text-right font-medium"><%= item.quantity %> <%= is_commodity ? 'KGs' : 'bags' %></td>
+                <td class="px-4 py-3 text-right font-mono text-gray-500">Rs. <%= number_to_currency(item.unit_price, unit: "") %></td>
               </tr>
             <% end %>
           </tbody>
@@ -59,9 +72,93 @@
       <div class="w-64 space-y-1.5 text-right">
         <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Order Total</div>
         <div class="text-xl font-black text-gray-950 tracking-tight font-mono">
-          <%= number_to_currency(grand_total) %>
+          Rs. <%= number_to_currency(grand_total, unit: "") %>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- ==================================================================================== -->
+  <!-- CUSTOMER INVOICE PRINT VIEW LAYER (Hidden on Screen, visible entirely on Print layout) -->
+  <!-- ==================================================================================== -->
+  <div class="hidden print:block bg-white text-black p-4 w-full" dir="rtl">
+    
+    <!-- Print Header Section -->
+    <div class="border-b-2 border-black pb-4 flex justify-between items-start">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @sales_order.organization.name %></h1>
+        <p class="text-md font-bold text-gray-800 mt-1">کسٹمر کا نام: <span class="font-normal"><%= @sales_order.customer_name %></span></p>
+      </div>
+      <div class="text-left">
+        <h2 class="text-xl font-bold font-mono text-gray-900">آرڈر نمبر: <%= @sales_order.order_number %></h2>
+        <p class="text-xs text-gray-600 mt-1 font-sans">تاریخ: <%= @sales_order.placed_at.strftime("%d/%m/%Y %H:%M") %></p>
+      </div>
+    </div>
+
+    <!-- Items Table Block -->
+    <div class="mt-6">
+      <table class="min-w-full text-sm border-collapse border border-gray-300">
+        <thead class="bg-gray-100">
+          <tr class="border-b border-gray-300">
+            <th class="px-3 py-2 text-right font-bold text-gray-800 border-r border-gray-300">آئٹم / تفصیلات</th>
+            <th class="px-3 py-2 text-center font-bold text-gray-800 border-r border-gray-300">بیچ نمبر</th>
+            <th class="px-3 py-2 text-left font-bold text-gray-800 border-r border-gray-300">مقدار (تعداد)</th>
+            <th class="px-3 py-2 text-left font-bold text-gray-800 border-r border-gray-300">قیمت فی یونٹ</th>
+            <th class="px-3 py-2 text-left font-bold text-gray-800">کل قیمت</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-300 bg-white">
+          <% print_grand_total = 0 %>
+          <% @sales_order.sales_line_items.includes(product_batch: :product).each do |item| %>
+            <% is_commodity = %w[seed oil_cake wanda].include?(item.product_batch.product.category.to_s) %>
+            <% line_total = item.quantity * item.unit_price %>
+            <% print_grand_total += line_total %>
+            <tr class="border-b border-gray-300">
+              <!-- Item Name / Urdu Slug Isolation -->
+              <td class="px-3 py-2 text-right font-semibold text-gray-900 border-r border-gray-300">
+                <% if item.product_batch.product.respond_to?(:slug) && item.product_batch.product.slug.present? %>
+                  <span class="font-bold text-base font-sans"><%= item.product_batch.product.slug %></span>
+                  <span class="text-xs text-gray-500 font-normal mr-1">(<%= item.product_batch.product.name %>)</span>
+                <% else %>
+                  <span><%= item.product_batch.product.name %></span>
+                <% end %>
+              </td>
+              <!-- Lot Batch Details -->
+              <td class="px-3 py-2 text-center font-mono text-xs text-gray-700 border-r border-gray-300">
+                <%= item.product_batch.batch_number.presence || 'اوپن سٹاک' %>
+              </td>
+              <!-- Quantity Details with dynamic weight handling -->
+              <td class="px-3 py-2 text-left font-medium border-r border-gray-300">
+                <%= item.quantity %> <%= is_commodity ? 'کلو گرام (KG)' : 'بوری (Bags)' %>
+              </td>
+              <!-- Cost metrics per units -->
+              <td class="px-3 py-2 text-left font-mono text-gray-600 border-r border-gray-300">
+                Rs. <%= number_to_currency(item.unit_price, unit: "") %>
+              </td>
+              <!-- Subtotals summary line -->
+              <td class="px-3 py-2 text-left font-bold font-mono">
+                Rs. <%= number_to_currency(line_total, unit: "") %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Print Grand Summary Footer -->
+    <div class="mt-4 flex justify-start">
+      <div class="w-64 border border-black p-3 rounded bg-gray-50 text-left">
+        <div class="text-xs font-bold text-gray-500 text-right mb-1">کل قابلِ ادائیگی رقم (Grand Total):</div>
+        <div class="text-2xl font-black text-gray-950 font-mono">
+          Rs. <%= number_to_currency(print_grand_total, unit: "") %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print Footer Disclaimer Stamp -->
+    <div class="mt-12 text-center text-xs text-gray-400 border-t border-dashed border-gray-300 pt-4">
+      کمپیوٹر سے تیار کردہ رسید - دستخط کی ضرورت نہیں ہے۔ تشریف آوری کا شکریہ!
+    </div>
+  </div>
+
 </div>

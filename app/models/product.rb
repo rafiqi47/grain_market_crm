@@ -17,11 +17,13 @@ class Product < ApplicationRecord
 
   # Callbacks
   before_validation :generate_sku, on: :create, if: -> { sku.blank? }
+  before_validation :clean_urdu_slug
 
   validates :name, presence: true
   validates :category, presence: true
   validates :sku, uniqueness: { scope: :organization_id }, allow_blank: true
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
+  validates :slug, presence: true, uniqueness: { scope: :organization_id }
 
   # Scopes
   scope :low_stock, -> {
@@ -62,5 +64,14 @@ class Product < ApplicationRecord
       # Ensure collision safety within the multi-tenant organization boundary
       break unless Product.exists?(sku: sku, organization_id: organization_id)
     end
+  end
+
+  def clean_urdu_slug
+    return if slug.blank?
+
+    # 1. Strip whitespace
+    # 2. Replace multiple consecutive spaces with a single hyphen
+    # 3. Leave UTF-8 Urdu characters untouched
+    self.slug = slug.strip.gsub(/\s+/, '-')
   end
 end
