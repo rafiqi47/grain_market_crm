@@ -1,4 +1,6 @@
 <!-- app/views/product_batches/_form.html.erb -->
+<% is_commodity = %w[seed oil_cake wanda].include?(product.category.to_s) %>
+
 <%= form_with(model: [product, product_batch], class: "space-y-4") do |f| %>
   <% if product_batch.errors.any? %>
     <div class="bg-red-50 text-red-700 p-3 rounded text-xs">
@@ -8,30 +10,30 @@
 
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <%= f.label :batch_number, "Lot / Batch #", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-      <%= f.text_field :batch_number, placeholder: "ENG-DAP-01", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
+      <%= f.label :batch_number, is_commodity ? "Lot / Batch # (Optional)" : "Lot / Batch #", class: "block text-xs font-semibold text-gray-600 uppercase" %>
+      <%= f.text_field :batch_number, placeholder: is_commodity ? "e.g., Loose Stock" : "ENG-DAP-01", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: !is_commodity %>
     </div>
     
     <% if product_batch.new_record? %>
       <div>
-        <%= f.label :initial_quantity, "Initial Bags Qty", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-        <%= f.number_field :initial_quantity, min: 1, id: "batch_initial_qty", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
+        <%= f.label :initial_quantity, is_commodity ? "Initial Weight (KGs)" : "Initial Bags Qty", class: "block text-xs font-semibold text-gray-600 uppercase" %>
+        <%= f.number_field :initial_quantity, min: 1, step: is_commodity ? "0.01" : "1", id: "batch_initial_qty", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
       </div>
     <% else %>
       <div>
-        <%= f.label :quantity_on_hand, "Current Stock Left", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-        <%= f.number_field :quantity_on_hand, min: 0, class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
+        <%= f.label :quantity_on_hand, is_commodity ? "Current Stock Left (KGs)" : "Current Stock Left", class: "block text-xs font-semibold text-gray-600 uppercase" %>
+        <%= f.number_field :quantity_on_hand, min: 0, step: is_commodity ? "0.01" : "1", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
       </div>
     <% end %>
   </div>
 
   <div>
-    <%= f.label :purchase_price_per_unit, "Purchase Cost Per Bag (PKR)", class: "block text-xs font-semibold text-gray-600 uppercase" %>
+    <%= f.label :purchase_price_per_unit, is_commodity ? "Purchase Rate Per KG (PKR)" : "Purchase Cost Per Bag (PKR)", class: "block text-xs font-semibold text-gray-600 uppercase" %>
     <%= f.number_field :purchase_price_per_unit, step: "0.01", min: "0", id: "batch_unit_cost", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
   </div>
 
   <% if product_batch.new_record? %>
-    <!-- NEW SECTION: Automated Financial Split Layer (Khaata Allocation) -->
+    <!-- Automated Financial Split Layer (Khaata Allocation) -->
     <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
       <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Financial Agreement Structure</span>
       
@@ -60,11 +62,8 @@
         }
 
         if (qtyInput && costInput) {
-          // 1. Listen for dynamic changes as the trader types
           qtyInput.addEventListener("input", calculate);
           costInput.addEventListener("input", calculate);
-
-          // 2. Run immediately to catch values if fields are pre-filled or edited
           calculate();
         }
       })();
@@ -73,17 +72,17 @@
 
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <%= f.label :manufacture_date, "Mfg Date", class: "block text-xs font-semibold text-gray-600 uppercase" %>
+      <%= f.label :manufacture_date, "Mfg Date (Optional)", class: "block text-xs font-semibold text-gray-600 uppercase" %>
       <%= f.date_field :manufacture_date, class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" %>
     </div>
     <div>
-      <%= f.label :expiry_date, "Expiry Date", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-      <%= f.date_field :expiry_date, class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
+      <%= f.label :expiry_date, is_commodity ? "Expiry Date (Optional)" : "Expiry Date", class: "block text-xs font-semibold text-gray-600 uppercase" %>
+      <%= f.date_field :expiry_date, class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: !is_commodity %>
     </div>
   </div>
 
   <div class="flex justify-end gap-2 pt-2">
-    <%= link_to "Cancel", "#", class: "px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200", data: { turbo_frame: "modal" } %>
+    <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer" onclick="let frame = this.closest('turbo-frame'); if(frame) { frame.src = ''; frame.innerHTML = ''; }">Cancel</button>
     <%= f.submit submit_label, class: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 cursor-pointer" %>
   </div>
 <% end %>
