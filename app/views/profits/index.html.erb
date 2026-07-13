@@ -1,0 +1,172 @@
+<!-- app/views/profits/index.html.erb -->
+<div class="p-6 space-y-6 max-w-7xl mx-auto">
+  
+  <!-- Header Title Summary Layout row -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 pb-5 border-b border-gray-200">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Profit Analytics / منافع</h1>
+      <p class="text-sm text-gray-500">Real-time ledger valuation based on lot purchase price mapping.</p>
+    </div>
+
+    <!-- Reactive Filter Form Component Block -->
+    <%= form_with url: profits_path, method: :get, 
+                  data: { 
+                    controller: "profit-filter", 
+                    profit_filter_target: "form",
+                    turbo_frame: "profit_metrics_frame" 
+                  }, 
+                  class: "flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white p-3 rounded-xl border border-gray-200 shadow-sm" do |f| %>
+
+      <div class="flex flex-col">
+        <%= f.select :period,
+                    [ ['Today', 'today'], ['This Week', 'week'], ['This Month', 'month'], ['Custom Range', 'custom'] ], 
+                    { selected: @period }, 
+                    { 
+                      class: "rounded-lg border-gray-300 text-sm focus:ring-green-500 focus:border-green-500 bg-gray-50 font-medium text-gray-700",
+                      data: { 
+                        profit_filter_target: "periodSelect",
+                        action: "change->profit-filter#changePeriod" 
+                      } 
+                    } %>
+      </div>
+
+      <!-- Custom Date Input Containers -->
+      <div data-profit-filter-target="customFields" class="flex items-center gap-2 hidden animate-fadeIn">
+        <%= f.date_field :start_date, value: params[:start_date],
+                         class: "rounded-lg border-gray-300 text-sm focus:ring-green-500 focus:border-green-500 bg-gray-50 text-gray-700 font-medium",
+                         data: { profit_filter_target: "startInput", action: "change->profit-filter#changeCustomDate" } %>
+        <span class="text-gray-400 text-xs font-semibold uppercase">to</span>
+        <%= f.date_field :end_date, value: params[:end_date],
+                         class: "rounded-lg border-gray-300 text-sm focus:ring-green-500 focus:border-green-500 bg-gray-50 text-gray-700 font-medium",
+                         data: { profit_filter_target: "endInput", action: "change->profit-filter#changeCustomDate" } %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Dynamic Content Exchange Area Bound inside Turbo Isolated Pipeline Frame -->
+  <%= turbo_frame_tag "profit_metrics_frame" do %>
+    
+    <!-- KPI Summary Grid Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Gross Total Revenue Card -->
+      <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-gray-400 tracking-wider uppercase">Total Revenue / کل آمدنی</span>
+          <span class="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+        </div>
+        <span class="text-3xl font-black text-gray-900 mt-4 tracking-tight font-mono">Rs. <%= number_with_delimiter(sprintf('%.2f', @total_revenue)) %></span>
+      </div>
+
+      <!-- Cost of Goods Sold Card -->
+      <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-gray-400 tracking-wider uppercase">Cost of Goods (COGS) / لاگت</span>
+          <span class="p-1.5 rounded-lg bg-orange-50 text-orange-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg>
+          </span>
+        </div>
+        <span class="text-3xl font-black text-gray-700 mt-4 tracking-tight font-mono">Rs. <%= number_with_delimiter(sprintf('%.2f', @total_cogs)) %></span>
+      </div>
+
+      <!-- Net Income Profit Yield Summary Card -->
+      <div class="bg-green-50 p-6 rounded-2xl border border-green-200 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-green-700 tracking-wider uppercase">Net Profit / خالص منافع</span>
+          <span class="p-1.5 rounded-lg bg-green-100 text-green-700">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          </span>
+        </div>
+        <span class="text-3xl font-black text-green-900 mt-4 tracking-tight font-mono">Rs. <%= number_with_delimiter(sprintf('%.2f', @net_profit)) %></span>
+      </div>
+    </div>
+
+    <!-- NEW: Itemized Product & Lot Breakdown Section -->
+    <div class="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden mt-8">
+      <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+        <div>
+          <h2 class="text-md font-bold text-gray-900">Product & Batch Breakdown / تفصیلاتِ منافع بحساب مال و بیچ</h2>
+          <p class="text-xs text-gray-500 mt-0.5">Performance tracking down to the exact procurement batch lot level.</p>
+        </div>
+        <span class="text-xs bg-gray-200 text-gray-700 font-semibold px-2.5 py-1 rounded-full font-mono">
+          <%= @batch_perfomance.to_a.size %> Items Logged
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Product Description</th>
+              <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Batch Lot</th>
+              <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Quantity Dispatched</th>
+              <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Gross Sales Volume</th>
+              <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Net Profit Contribution</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 bg-white">
+            <% if @batch_perfomance.any? %>
+              <% @batch_perfomance.each do |row| %>
+                <% # Resolve the string name of the enum from the database integer %>
+                <% category_string = Product.categories.key(row.prod_category).to_s %>
+                <% is_commodity = %w[seed oil_cake wanda].include?(category_string) %>
+
+                <tr class="hover:bg-gray-50/70 transition-colors">
+
+                  <!-- Product Identity Cell -->
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center space-x-2">
+                      <span class="font-bold text-gray-900 capitalize font-sans"><%= row.prod_name %></span>
+                      <% if row.prod_slug.present? %>
+                        <span class="text-gray-300">/</span>
+                        <span class="inline-block px-1.5 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-800 rounded font-sans" dir="rtl">
+                          <%= row.prod_slug %>
+                        </span>
+                      <% end %>
+                    </div>
+                    <div class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mt-0.5">
+                      <%= category_string.humanize %>
+                    </div>
+                  </td>
+
+                  <!-- Batch Lot Information Cell -->
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="font-mono text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 font-bold">
+                      <%= row.lot_num.presence || 'Loose / اوپن سٹاک' %>
+                    </span>
+                  </td>
+
+                  <!-- Quantity Unit Display -->
+                  <td class="px-6 py-4 whitespace-nowrap text-right font-semibold text-gray-800">
+                    <%= row.total_units_sold %> 
+                    <span class="text-xs text-gray-400 font-medium">
+                      <%= is_commodity ? 'Kilo Grams' : 'bags' %>
+                    </span>
+                  </td>
+
+                  <!-- Sales Income Stream -->
+                  <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-600">
+                    Rs. <%= number_with_delimiter(sprintf('%.2f', row.total_rev)) %>
+                  </td>
+
+                  <!-- Clean Realized Profit Segment Margin -->
+                  <td class="px-6 py-4 whitespace-nowrap text-right font-mono font-bold <%= row.total_prof >= 0 ? 'text-emerald-600' : 'text-red-600' %>">
+                    Rs. <%= number_with_delimiter(sprintf('%.2f', row.total_prof)) %>
+                  </td>
+
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-400 italic bg-gray-50/50">
+                  No line items processed during this historical interval range window.
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div>

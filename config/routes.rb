@@ -52,4 +52,6 @@ Rails.application.routes.draw do
       patch :mark_as_read
     end
   end
+
+  resources :profits, only: [:index]
 end
