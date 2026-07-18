@@ -1,0 +1,20 @@
+<% if crop.errors.any? %>
+  <div class="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 mb-6">
+    <ul class="list-disc list-inside text-sm">
+      <% crop.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: crop do |f| %>
+  <div class="space-y-4 bg-white border border-gray-200 rounded-lg p-6">
+    <div>
+      <%= f.label :name, "Crop Name", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :name, placeholder: "e.g. Wheat, Cotton, Maize", class: "w-full rounded-md border-gray-300 shadow-sm" %>
+    </div>
+
+    <%= f.submit class: "w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-md py-2 px-4 cursor-pointer" %>
+  </div>
+<% end %>

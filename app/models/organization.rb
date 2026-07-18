@@ -15,6 +15,16 @@ class Organization < ApplicationRecord
   has_many  :supplier_ledgers, dependent: :destroy
   has_many  :product_batches, dependent: :destroy
 
+  # Khata Engine additions
+  has_many  :farmers, dependent: :destroy, inverse_of: :organization
+  has_many  :khata_cycles, dependent: :destroy
+  has_many  :khata_transactions, dependent: :destroy
+  has_many  :crops, dependent: :destroy
+  has_many  :crop_purchases, dependent: :destroy
+  has_many  :trading_partners, dependent: :destroy, inverse_of: :organization
+  has_many  :trading_partner_ledgers, dependent: :destroy
+  has_many  :crop_sales, dependent: :destroy
+
   # Allow nested management for onboarding forms
   accepts_nested_attributes_for :owner, reject_if: :all_blank
 
@@ -25,7 +35,6 @@ class Organization < ApplicationRecord
   private
 
   def single_owner_constraint
-    # Look through the in-memory array using 'target' instead of querying the DB
     all_owners = users.select { |u| u.owner? && !u.marked_for_destruction? }
 
     if all_owners.size > 1

@@ -1,0 +1,55 @@
+<div class="max-w-3xl mx-auto py-8">
+  <div class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900"><%= @crop.name %></h1>
+      <p class="text-gray-500 text-sm mt-1">Currently in stock: <span class="font-medium text-gray-900"><%= @crop.quantity_on_hand_formatted %></span></p>
+    </div>
+    <%= link_to "Edit", edit_crop_path(@crop), class: "bg-white border border-gray-300 text-gray-700 font-medium rounded-md py-2 px-4 text-sm" %>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <!-- Recent Purchases (stock in) -->
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="font-medium text-gray-900 text-sm">Recent Purchases (In)</h2>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <% @recent_purchases.each do |purchase| %>
+          <div class="px-4 py-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-700"><%= purchase.farmer.full_name %></span>
+              <span class="font-medium text-green-700">+<%= purchase.net_weight_formatted %></span>
+            </div>
+            <p class="text-xs text-gray-400"><%= purchase.purchase_date.strftime("%d %b %Y") %></p>
+          </div>
+        <% end %>
+
+        <% if @recent_purchases.empty? %>
+          <div class="px-4 py-6 text-center text-gray-400 text-sm">No purchases yet.</div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Recent Sales (stock out) -->
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="font-medium text-gray-900 text-sm">Recent Sales (Out)</h2>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <% @recent_sales.each do |sale| %>
+          <div class="px-4 py-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-700"><%= sale.trading_partner.business_name.titleize %></span>
+              <span class="font-medium text-red-600">-<%= sale.weight_formatted %></span>
+            </div>
+            <p class="text-xs text-gray-400"><%= sale.sale_date.strftime("%d %b %Y") %></p>
+          </div>
+        <% end %>
+
+        <% if @recent_sales.empty? %>
+          <div class="px-4 py-6 text-center text-gray-400 text-sm">No sales yet.</div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

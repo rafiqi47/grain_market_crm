@@ -10,9 +10,72 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_12_131041) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_17_091616) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "crop_purchases", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "farmer_id", null: false
+    t.bigint "crop_id", null: false
+    t.decimal "gross_weight", precision: 12, scale: 2, null: false
+    t.decimal "katt_deduction", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "net_weight", precision: 12, scale: 2, null: false
+    t.decimal "market_rate", precision: 12, scale: 2, null: false
+    t.decimal "gross_value", precision: 12, scale: 2, null: false
+    t.decimal "commission_amount", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "labor_cost", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "net_ledger_value", precision: 12, scale: 2, null: false
+    t.integer "bardaana_bags_count", default: 0, null: false
+    t.integer "bardaana_owner", default: 0, null: false
+    t.date "purchase_date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["crop_id"], name: "index_crop_purchases_on_crop_id"
+    t.index ["farmer_id"], name: "index_crop_purchases_on_farmer_id"
+    t.index ["organization_id"], name: "index_crop_purchases_on_organization_id"
+  end
+
+  create_table "crop_sales", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "trading_partner_id", null: false
+    t.bigint "crop_id", null: false
+    t.decimal "weight", precision: 12, scale: 2, null: false
+    t.decimal "rate", precision: 12, scale: 2, null: false
+    t.decimal "total_value", precision: 12, scale: 2, null: false
+    t.integer "bardaana_bags_count", default: 0, null: false
+    t.integer "bardaana_owner", default: 0, null: false
+    t.date "sale_date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["crop_id"], name: "index_crop_sales_on_crop_id"
+    t.index ["organization_id"], name: "index_crop_sales_on_organization_id"
+    t.index ["trading_partner_id"], name: "index_crop_sales_on_trading_partner_id"
+  end
+
+  create_table "crops", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.string "name", null: false
+    t.decimal "quantity_on_hand", precision: 12, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "name"], name: "index_crops_on_organization_id_and_name", unique: true
+    t.index ["organization_id"], name: "index_crops_on_organization_id"
+  end
+
+  create_table "farmers", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.string "full_name", null: false
+    t.text "address", null: false
+    t.string "primary_phone", null: false
+    t.string "secondary_phone"
+    t.decimal "current_balance", precision: 12, scale: 2, default: "0.0", null: false
+    t.integer "bardaana_balance", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "primary_phone"], name: "index_farmers_on_org_and_primary_phone", unique: true
+    t.index ["organization_id"], name: "index_farmers_on_organization_id"
+  end
 
   create_table "inventory_adjustments", force: :cascade do |t|
     t.bigint "organization_id", null: false
@@ -41,6 +104,41 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_131041) do
     t.index ["organization_id"], name: "index_inventory_alerts_on_organization_id"
     t.index ["product_batch_id", "alert_type"], name: "index_inventory_alerts_on_product_batch_id_and_alert_type", unique: true, where: "(read_at IS NULL)"
     t.index ["product_batch_id"], name: "index_inventory_alerts_on_product_batch_id"
+  end
+
+  create_table "khata_cycles", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "farmer_id", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "closed_at"
+    t.decimal "closing_balance", precision: 12, scale: 2
+    t.integer "closing_bardaana_balance"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["farmer_id"], name: "index_khata_cycles_on_farmer_id"
+    t.index ["farmer_id"], name: "index_one_active_cycle_per_farmer", unique: true, where: "(status = 0)"
+    t.index ["organization_id"], name: "index_khata_cycles_on_organization_id"
+  end
+
+  create_table "khata_transactions", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "khata_cycle_id", null: false
+    t.integer "entry_type", null: false
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.decimal "resulting_balance", precision: 12, scale: 2, null: false
+    t.integer "bardaana_credit", default: 0, null: false
+    t.integer "bardaana_debit", default: 0, null: false
+    t.integer "resulting_bardaana_balance", default: 0, null: false
+    t.string "description"
+    t.string "sourceable_type"
+    t.bigint "sourceable_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["khata_cycle_id", "created_at"], name: "index_khata_transactions_on_cycle_and_date"
+    t.index ["khata_cycle_id"], name: "index_khata_transactions_on_khata_cycle_id"
+    t.index ["organization_id"], name: "index_khata_transactions_on_organization_id"
+    t.index ["sourceable_type", "sourceable_id"], name: "index_khata_transactions_on_sourceable"
+    t.check_constraint "amount >= 0::numeric", name: "check_khata_transaction_amount_non_negative"
   end
 
   create_table "organizations", force: :cascade do |t|
@@ -160,6 +258,42 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_131041) do
     t.index ["organization_id"], name: "index_suppliers_on_organization_id"
   end
 
+  create_table "trading_partner_ledgers", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "trading_partner_id", null: false
+    t.integer "entry_type", null: false
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.decimal "resulting_balance", precision: 12, scale: 2, null: false
+    t.integer "bardaana_credit", default: 0, null: false
+    t.integer "bardaana_debit", default: 0, null: false
+    t.integer "resulting_bardaana_balance", default: 0, null: false
+    t.string "description"
+    t.string "sourceable_type"
+    t.bigint "sourceable_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id"], name: "index_trading_partner_ledgers_on_organization_id"
+    t.index ["sourceable_type", "sourceable_id"], name: "index_trading_partner_ledgers_on_sourceable"
+    t.index ["trading_partner_id", "created_at"], name: "index_tp_ledgers_on_partner_and_date"
+    t.index ["trading_partner_id"], name: "index_trading_partner_ledgers_on_trading_partner_id"
+    t.check_constraint "amount >= 0::numeric", name: "check_tp_ledger_amount_non_negative"
+  end
+
+  create_table "trading_partners", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.string "business_name", null: false
+    t.string "contact_person"
+    t.text "address", null: false
+    t.string "primary_phone", null: false
+    t.string "secondary_phone"
+    t.decimal "current_balance", precision: 12, scale: 2, default: "0.0", null: false
+    t.integer "bardaana_balance", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "business_name"], name: "index_trading_partners_on_org_and_name", unique: true
+    t.index ["organization_id"], name: "index_trading_partners_on_organization_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -177,11 +311,23 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_131041) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "crop_purchases", "crops"
+  add_foreign_key "crop_purchases", "farmers"
+  add_foreign_key "crop_purchases", "organizations"
+  add_foreign_key "crop_sales", "crops"
+  add_foreign_key "crop_sales", "organizations"
+  add_foreign_key "crop_sales", "trading_partners"
+  add_foreign_key "crops", "organizations"
+  add_foreign_key "farmers", "organizations"
   add_foreign_key "inventory_adjustments", "organizations"
   add_foreign_key "inventory_adjustments", "product_batches"
   add_foreign_key "inventory_adjustments", "users"
   add_foreign_key "inventory_alerts", "organizations"
   add_foreign_key "inventory_alerts", "product_batches"
+  add_foreign_key "khata_cycles", "farmers"
+  add_foreign_key "khata_cycles", "organizations"
+  add_foreign_key "khata_transactions", "khata_cycles"
+  add_foreign_key "khata_transactions", "organizations"
   add_foreign_key "product_batches", "organizations"
   add_foreign_key "product_batches", "products"
   add_foreign_key "products", "organizations"
@@ -197,5 +343,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_12_131041) do
   add_foreign_key "supplier_ledgers", "purchase_orders"
   add_foreign_key "supplier_ledgers", "suppliers"
   add_foreign_key "suppliers", "organizations"
+  add_foreign_key "trading_partner_ledgers", "organizations"
+  add_foreign_key "trading_partner_ledgers", "trading_partners"
+  add_foreign_key "trading_partners", "organizations"
   add_foreign_key "users", "organizations"
 end

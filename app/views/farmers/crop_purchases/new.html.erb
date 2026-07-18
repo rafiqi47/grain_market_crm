@@ -1,0 +1,120 @@
+<div class="max-w-2xl mx-auto py-8">
+  <h1 class="text-2xl font-semibold text-gray-900 mb-1">New Crop Purchase</h1>
+  <p class="text-gray-500 mb-6">Recording a delivery from <%= @farmer.full_name %></p>
+
+  <%= form_with model: [@farmer, @crop_purchase], data: { controller: "crop-purchase-calculator" } do |f| %>
+    <% if @crop_purchase.errors.any? %>
+      <div class="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 mb-6">
+        <ul class="list-disc list-inside text-sm">
+          <% @crop_purchase.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="space-y-6 bg-white border border-gray-200 rounded-lg p-6">
+
+      <div>
+        <%= f.label :crop_id, "Crop", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.collection_select :crop_id, @farmer.organization.crops, :id, :name,
+              { prompt: "Select a crop" }, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <div>
+        <%= f.label :purchase_date, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.date_field :purchase_date, value: Date.current, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <fieldset class="border border-gray-200 rounded-md p-4">
+        <legend class="text-sm font-medium text-gray-700 px-1">Gross Weight</legend>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <%= f.label :gross_weight_maund, "Maund", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :gross_weight_maund, min: 0, step: 1,
+                  data: { crop_purchase_calculator_target: "grossMaund", action: "input->crop-purchase-calculator#calculate" },
+                  class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+          <div>
+            <%= f.label :gross_weight_kg_part, "KG", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :gross_weight_kg_part, min: 0, max: 39.99, step: 0.01,
+                  data: { crop_purchase_calculator_target: "grossKg", action: "input->crop-purchase-calculator#calculate" },
+                  class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="border border-gray-200 rounded-md p-4">
+        <legend class="text-sm font-medium text-gray-700 px-1">Katt / Deduction</legend>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <%= f.label :katt_deduction_maund, "Maund", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :katt_deduction_maund, min: 0, step: 1,
+                  data: { crop_purchase_calculator_target: "kattMaund", action: "input->crop-purchase-calculator#calculate" },
+                  class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+          <div>
+            <%= f.label :katt_deduction_kg_part, "KG", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :katt_deduction_kg_part, min: 0, max: 39.99, step: 0.01,
+                  data: { crop_purchase_calculator_target: "kattKg", action: "input->crop-purchase-calculator#calculate" },
+                  class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+        </div>
+      </fieldset>
+
+      <div>
+        <%= f.label :market_rate, "Market Rate (per Maund)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.number_field :market_rate, min: 0, step: 0.01,
+              data: { crop_purchase_calculator_target: "marketRate", action: "input->crop-purchase-calculator#calculate" },
+              class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <%= f.label :commission_amount, "Commission", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.number_field :commission_amount, min: 0, step: 0.01, value: 0,
+                data: { crop_purchase_calculator_target: "commission", action: "input->crop-purchase-calculator#calculate" },
+                class: "w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+        <div>
+          <%= f.label :labor_cost, "Labor Cost", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.number_field :labor_cost, min: 0, step: 0.01, value: 0,
+                data: { crop_purchase_calculator_target: "labor", action: "input->crop-purchase-calculator#calculate" },
+                class: "w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+      </div>
+
+      <fieldset class="border border-gray-200 rounded-md p-4">
+        <legend class="text-sm font-medium text-gray-700 px-1">Bardaana (Bags)</legend>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <%= f.label :bardaana_bags_count, "Bag Count", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :bardaana_bags_count, min: 0, step: 1, value: 0, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+          <div>
+            <%= f.label :bardaana_owner, "Bags Supplied By", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.select :bardaana_owner, CropPurchase.bardaana_owners.keys.map { |k| [k.humanize, k] }, {}, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Live calculation preview -->
+      <div class="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-2">
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">Net Weight</span>
+          <span class="font-medium text-gray-900" data-crop-purchase-calculator-target="netWeightOut">0 Maund 0.00 KG</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-500">Gross Value</span>
+          <span class="font-medium text-gray-900">Rs. <span data-crop-purchase-calculator-target="grossValueOut">0.00</span></span>
+        </div>
+        <div class="flex justify-between text-base border-t border-gray-200 pt-2">
+          <span class="text-gray-700 font-medium">Net Ledger Value (credited to Khata)</span>
+          <span class="font-semibold text-green-700">Rs. <span data-crop-purchase-calculator-target="netLedgerValueOut">0.00</span></span>
+        </div>
+      </div>
+
+      <%= f.submit "Record Purchase", class: "w-full bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2 px-4 cursor-pointer" %>
+    </div>
+  <% end %>
+</div>

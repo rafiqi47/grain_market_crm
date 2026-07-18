@@ -1,0 +1,60 @@
+<div class="max-w-xl mx-auto py-8">
+  <h1 class="text-2xl font-semibold text-gray-900 mb-1">New Khata Entry</h1>
+  <p class="text-gray-500 mb-6">
+    <%= link_to @farmer.full_name, farmer_path(@farmer), class: "text-blue-600 hover:underline" %>
+  </p>
+
+  <% if @transaction.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 mb-6">
+      <ul class="list-disc list-inside text-sm">
+        <% @transaction.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with model: [@farmer, @cycle, @transaction] do |f| %>
+    <div class="space-y-4 bg-white border border-gray-200 rounded-lg p-6">
+
+      <div>
+        <%= f.label :entry_type, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.select :entry_type,
+              [["Credit — we owe farmer more (e.g. crop delivered)", :credit],
+               ["Debit — we owe farmer less (e.g. cash paid out to farmer)", :debit]],
+              { prompt: "Select entry type" },
+              class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <div>
+        <%= f.label :amount, "Amount (Rs.)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.number_field :amount, min: 0, step: 0.01, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <fieldset class="border border-gray-200 rounded-md p-4">
+        <legend class="text-sm font-medium text-gray-700 px-1">Bardaana Adjustment (optional)</legend>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <%= f.label :bardaana_credit, "Bags we owe farmer (farmer supplied)", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :bardaana_credit, min: 0, step: 1, value: 0, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+          <div>
+            <%= f.label :bardaana_debit, "Bags farmer owes us (we supplied)", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :bardaana_debit, min: 0, step: 1, value: 0, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">Current bardaana balance: <span class="font-medium"><%= @farmer.bardaana_balance %> bags</span></p>
+      </fieldset>
+
+      <div>
+        <%= f.label :description, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :description, placeholder: "e.g. Cash advance paid, Salary deduction, Manual adjustment", class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <div class="flex gap-3">
+        <%= f.submit "Add Entry", class: "flex-1 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2 px-4 cursor-pointer" %>
+        <%= link_to "Cancel", farmer_path(@farmer), class: "flex-1 text-center bg-white border border-gray-300 text-gray-700 font-medium rounded-md py-2 px-4" %>
+      </div>
+    </div>
+  <% end %>
+</div>

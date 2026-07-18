@@ -37,6 +37,24 @@ Rails.application.routes.draw do
     resources :supplier_ledgers, only: [:new, :create, :edit, :update, :destroy], controller: "suppliers/supplier_ledgers"
   end
 
+  resources :farmers, only: [:index, :show, :new, :create, :edit, :update] do
+    resources :crop_purchases, only: [:new, :create], controller: "farmers/crop_purchases"
+
+    resources :khata_cycles, only: [:show] do
+      member do
+        post :close
+      end
+      resources :khata_transactions, only: [:new, :create, :edit, :update, :destroy], controller: "farmers/khata_transactions"
+    end
+  end
+
+  resources :crops, only: [:index, :show, :new, :create, :edit, :update]
+
+  resources :trading_partners, only: [:index, :show, :new, :create, :edit, :update] do
+    resources :trading_partner_ledgers, only: [:new, :create, :edit, :update, :destroy], controller: "trading_partners/trading_partner_ledgers"
+    resources :crop_sales, only: [:new, :create], controller: "trading_partners/crop_sales"
+  end
+
   resources :products do
     resources :product_batches, only: [:new, :create, :edit, :update, :destroy]
   end

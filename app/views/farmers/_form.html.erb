@@ -1,0 +1,36 @@
+<% if farmer.errors.any? %>
+  <div class="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 mb-6">
+    <ul class="list-disc list-inside text-sm">
+      <% farmer.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: farmer do |f| %>
+  <div class="space-y-4 bg-white border border-gray-200 rounded-lg p-6">
+    <div>
+      <%= f.label :full_name, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :full_name, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+    </div>
+
+    <div>
+      <%= f.label :address, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_area :address, rows: 2, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <%= f.label :primary_phone, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :primary_phone, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+      <div>
+        <%= f.label :secondary_phone, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :secondary_phone, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+    </div>
+
+    <%= f.submit class: "w-full bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2 px-4 cursor-pointer" %>
+  </div>
+<% end %>

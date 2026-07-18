@@ -1,0 +1,41 @@
+<% if trading_partner.errors.any? %>
+  <div class="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 mb-6">
+    <ul class="list-disc list-inside text-sm">
+      <% trading_partner.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: trading_partner do |f| %>
+  <div class="space-y-4 bg-white border border-gray-200 rounded-lg p-6">
+    <div>
+      <%= f.label :business_name, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :business_name, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+    </div>
+
+    <div>
+      <%= f.label :contact_person, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :contact_person, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+    </div>
+
+    <div>
+      <%= f.label :address, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_area :address, rows: 2, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <%= f.label :primary_phone, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :primary_phone, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+      <div>
+        <%= f.label :secondary_phone, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :secondary_phone, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+    </div>
+
+    <%= f.submit class: "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md py-2 px-4 cursor-pointer" %>
+  </div>
+<% end %>

@@ -1,0 +1,82 @@
+<div class="max-w-2xl mx-auto py-8">
+  <h1 class="text-2xl font-semibold text-gray-900 mb-1">New Crop Sale</h1>
+  <p class="text-gray-500 mb-6">Selling crop stock to <%= @trading_partner.business_name %></p>
+
+  <%= form_with model: [@trading_partner, @crop_sale], data: { controller: "crop-sale-calculator" } do |f| %>
+    <% if @crop_sale.errors.any? %>
+      <div class="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 mb-6">
+        <ul class="list-disc list-inside text-sm">
+          <% @crop_sale.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="space-y-6 bg-white border border-gray-200 rounded-lg p-6">
+
+      <div>
+        <%= f.label :crop_id, "Crop", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.collection_select :crop_id, @trading_partner.organization.crops.where("quantity_on_hand > 0"), :id,
+              ->(crop) { "#{crop.name} — #{crop.quantity_on_hand_formatted} on hand" },
+              { prompt: "Select a crop" }, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <div>
+        <%= f.label :sale_date, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.date_field :sale_date, value: Date.current, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <fieldset class="border border-gray-200 rounded-md p-4">
+        <legend class="text-sm font-medium text-gray-700 px-1">Weight</legend>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <%= f.label :weight_maund, "Maund", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :weight_maund, min: 0, step: 1,
+                  data: { crop_sale_calculator_target: "maund", action: "input->crop-sale-calculator#calculate" },
+                  class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+          <div>
+            <%= f.label :weight_kg_part, "KG", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :weight_kg_part, min: 0, max: 39.99, step: 0.01,
+                  data: { crop_sale_calculator_target: "kg", action: "input->crop-sale-calculator#calculate" },
+                  class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+        </div>
+      </fieldset>
+
+      <div>
+        <%= f.label :rate, "Rate (per Maund)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.number_field :rate, min: 0, step: 0.01,
+              data: { crop_sale_calculator_target: "rate", action: "input->crop-sale-calculator#calculate" },
+              class: "w-full rounded-md border-gray-300 shadow-sm" %>
+      </div>
+
+      <fieldset class="border border-gray-200 rounded-md p-4">
+        <legend class="text-sm font-medium text-gray-700 px-1">Bardaana (Bags)</legend>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <%= f.label :bardaana_bags_count, "Bag Count", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.number_field :bardaana_bags_count, min: 0, step: 1, value: 0, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+          <div>
+            <%= f.label :bardaana_owner, "Bags Supplied By", class: "block text-xs text-gray-500 mb-1" %>
+            <%= f.select :bardaana_owner,
+              [["Organization supplied", "org_supplied"], ["Partner supplied", "partner_supplied"]],
+              {}, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Live calculation preview -->
+      <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+        <div class="flex justify-between text-base">
+          <span class="text-gray-700 font-medium">Total Sale Value (debited to their ledger)</span>
+          <span class="font-semibold text-blue-700">Rs. <span data-crop-sale-calculator-target="totalValueOut">0.00</span></span>
+        </div>
+      </div>
+
+      <%= f.submit "Record Sale", class: "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md py-2 px-4 cursor-pointer" %>
+    </div>
+  <% end %>
+</div>

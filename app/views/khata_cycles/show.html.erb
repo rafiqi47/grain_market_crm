@@ -1,0 +1,77 @@
+<div class="max-w-3xl mx-auto py-8">
+  <div class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900">
+        Khata Cycle <%= @khata_cycle.closed? ? "(Closed)" : "(Active)" %>
+      </h1>
+      <p class="text-gray-500 text-sm mt-1">
+        <%= link_to @farmer.full_name, farmer_path(@farmer), class: "text-blue-600 hover:underline" %>
+      </p>
+      <% if @khata_cycle.closed? %>
+        <p class="text-gray-400 text-xs mt-1">Closed on <%= @khata_cycle.closed_at.strftime("%d %b %Y, %I:%M %p") %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Balance Summary -->
+  <div class="grid grid-cols-2 gap-4 mb-6">
+    <div class="bg-white border border-gray-200 rounded-lg p-5">
+      <p class="text-xs text-gray-500 uppercase font-medium">
+        <%= @khata_cycle.closed? ? "Closing Balance" : "Current Balance" %>
+      </p>
+      <% balance = @khata_cycle.closed? ? @khata_cycle.closing_balance : @farmer.current_balance %>
+      <p class="text-2xl font-semibold mt-1 <%= balance.negative? ? 'text-red-600' : 'text-green-700' %>">
+        Rs. <%= number_with_delimiter(balance.abs.round(2)) %>
+      </p>
+      <p class="text-xs text-gray-400 mt-1"><%= balance.negative? ? "Farmer owes us" : "We owe farmer" %></p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-lg p-5">
+      <p class="text-xs text-gray-500 uppercase font-medium">
+        <%= @khata_cycle.closed? ? "Closing Bardaana" : "Current Bardaana" %>
+      </p>
+      <% bardaana = @khata_cycle.closed? ? @khata_cycle.closing_bardaana_balance : @farmer.bardaana_balance %>
+      <p class="text-2xl font-semibold mt-1 text-gray-900"><%= bardaana %> bags</p>
+    </div>
+  </div>
+
+  <!-- Transactions -->
+  <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-200">
+      <h2 class="font-medium text-gray-900">Transactions</h2>
+    </div>
+
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+          <td class="px-4 py-2 text-sm text-right text-green-700"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.credit? %></td>
+            <td class="px-4 py-2 text-sm text-right text-red-600"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.debit? %></td>
+            <td class="px-4 py-2 text-sm text-right font-medium text-gray-900">Rs. <%= number_with_delimiter(txn.resulting_balance.round(2)) %></td>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @transactions.each do |txn| %>
+          <tr>
+            <td class="px-4 py-2 text-sm text-gray-500"><%= txn.created_at.strftime("%d %b %Y") %></td>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= txn.description %></td>
+            <td class="px-4 py-2 text-sm text-right text-green-700"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.credit? %></td>
+            <td class="px-4 py-2 text-sm text-right text-red-600"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.debit? %></td>
+            <td class="px-4 py-2 text-sm text-right font-medium text-gray-900">Rs. <%= number_with_delimiter(txn.resulting_balance.round(2)) %></td>
+            <td class="px-4 py-2 text-sm text-right text-gray-600">
+              <% if txn.bardaana_credit > 0 %>
+                <span class="text-blue-600">+<%= txn.bardaana_credit %></span>
+              <% elsif txn.bardaana_debit > 0 %>
+                <span class="text-orange-600">-<%= txn.bardaana_debit %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+
+        <% if @transactions.empty? %>
+          <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400 text-sm">No transactions in this cycle.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
