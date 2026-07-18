@@ -7,6 +7,7 @@
     </div>
     <div class="flex gap-2">
       <%= link_to "Edit", edit_farmer_path(@farmer), class: "bg-white border border-gray-300 text-gray-700 font-medium rounded-md py-2 px-4 text-sm" %>
+      <%= link_to "Print Statement", khata_statement_farmer_path(@farmer), target: "_blank", class: "bg-white border border-gray-300 text-gray-700 font-medium rounded-md py-2 px-4 text-sm" %>
       <%= link_to "Record Crop Purchase", new_farmer_crop_purchase_path(@farmer), class: "bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2 px-4 text-sm" %>
     </div>
   </div>
@@ -30,7 +31,10 @@
   <!-- Active Cycle Ledger -->
   <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6">
     <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-      <h2 class="font-medium text-gray-900">Active Khata Cycle</h2>
+      <div class="flex items-center gap-3">
+        <h2 class="font-medium text-gray-900">Active Khata Cycle</h2>
+        <%= link_to "Purchase History", farmer_crop_purchases_path(@farmer), class: "text-xs text-gray-500 hover:text-gray-700 underline" %>
+      </div>
       <div class="flex gap-2">
         <%= link_to "+ Add Entry",
               new_farmer_khata_cycle_khata_transaction_path(@farmer, @active_cycle),
@@ -99,5 +103,35 @@
         <% end %>
       </div>
     </details>
+  <% end %>
+
+  <!-- Sales Orders -->
+  <% farmer_orders = @farmer.sales_orders.order(placed_at: :desc) %>
+  <% if farmer_orders.any? %>
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mt-6">
+      <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+        <h2 class="font-medium text-gray-900">Product Sales (on credit)</h2>
+        <%= link_to "New Sale", new_sales_order_path, class: "text-sm bg-gray-800 hover:bg-gray-900 text-white rounded-md py-1.5 px-3" %>
+      </div>
+
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% farmer_orders.each do |order| %>
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='<%= sales_order_path(order) %>'">
+              <td class="px-4 py-2 text-sm font-mono text-gray-700"><%= order.order_number %></td>
+              <td class="px-4 py-2 text-sm text-gray-500"><%= order.placed_at.strftime("%d %b %Y") %></td>
+              <td class="px-4 py-2 text-sm text-right font-medium text-red-600">Rs. <%= number_with_delimiter(order.total_revenue.round(2)) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   <% end %>
 </div>

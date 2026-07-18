@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_17_091616) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_18_081851) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -225,8 +225,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_17_091616) do
     t.datetime "placed_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "farmer_id"
+    t.bigint "trading_partner_id"
+    t.integer "customer_type", default: 0, null: false
+    t.index ["farmer_id"], name: "index_sales_orders_on_farmer_id"
     t.index ["organization_id", "order_number"], name: "index_sales_orders_on_organization_id_and_order_number", unique: true
     t.index ["organization_id"], name: "index_sales_orders_on_organization_id"
+    t.index ["trading_partner_id"], name: "index_sales_orders_on_trading_partner_id"
   end
 
   create_table "supplier_ledgers", force: :cascade do |t|
@@ -338,7 +343,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_17_091616) do
   add_foreign_key "sales_line_items", "product_batches"
   add_foreign_key "sales_line_items", "products"
   add_foreign_key "sales_line_items", "sales_orders"
+  add_foreign_key "sales_orders", "farmers"
   add_foreign_key "sales_orders", "organizations"
+  add_foreign_key "sales_orders", "trading_partners"
   add_foreign_key "supplier_ledgers", "organizations"
   add_foreign_key "supplier_ledgers", "purchase_orders"
   add_foreign_key "supplier_ledgers", "suppliers"

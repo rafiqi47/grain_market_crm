@@ -3,6 +3,12 @@ class Farmers::CropPurchasesController < ApplicationController
   before_action :authenticate_user!
   before_action :set_farmer
 
+  def index
+    @crop_purchases = @farmer.crop_purchases
+                             .includes(:crop)
+                             .order(purchase_date: :desc)
+  end
+
   def new
     @crop_purchase = @farmer.crop_purchases.new
   end

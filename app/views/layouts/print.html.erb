@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= content_for?(:title) ? yield(:title) : "Statement — Grain CRM" %></title>
+    <%= stylesheet_link_tag "application", media: "all" %>
+    <style>
+      @media print {
+        .no-print { display: none !important; }
+        body { font-size: 12px; }
+        table { page-break-inside: auto; }
+        tr { page-break-inside: avoid; page-break-after: auto; }
+      }
+      body { font-family: sans-serif; background: white; color: #111; }
+    </style>
+  </head>
+  <body class="bg-white">
+    <div class="no-print flex items-center justify-between px-8 py-3 bg-gray-100 border-b border-gray-300">
+      <span class="text-sm text-gray-600">Preview — this bar will not appear when printed</span>
+      <div class="flex gap-3">
+        <button onclick="window.print()" class="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700">
+          Print / Save as PDF
+        </button>
+        <button onclick="window.history.back()" class="bg-white border border-gray-300 text-gray-700 text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-50">
+          Go Back
+        </button>
+      </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-8 py-6">
+      <%= yield %>
+    </div>
+  </body>
+</html>

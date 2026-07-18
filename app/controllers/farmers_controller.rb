@@ -38,6 +38,18 @@ class FarmersController < ApplicationController
     end
   end
 
+  def khata_statement
+    @farmer = current_organization.farmers.find(params[:id])
+    @active_cycle = @farmer.active_khata_cycle
+    @active_transactions = @active_cycle.khata_transactions.chronological
+    @closed_cycles = @farmer.khata_cycles.closed.order(closed_at: :desc).map do |cycle|
+      { cycle: cycle, transactions: cycle.khata_transactions.chronological }
+    end
+    @sales_orders = @farmer.sales_orders.order(placed_at: :desc)
+
+    render layout: "print"
+  end
+
   private
 
   def set_farmer

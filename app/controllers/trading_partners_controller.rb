@@ -36,6 +36,15 @@ class TradingPartnersController < ApplicationController
     end
   end
 
+  def statement
+    @trading_partner = current_organization.trading_partners.find(params[:id])
+    @ledger_entries = @trading_partner.trading_partner_ledgers.chronological
+    @sales_orders = @trading_partner.sales_orders.order(placed_at: :desc)
+    @crop_sales = @trading_partner.crop_sales.includes(:crop).order(sale_date: :desc)
+
+    render layout: "print"
+  end
+
   private
 
   def set_trading_partner

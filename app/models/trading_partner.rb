@@ -3,6 +3,7 @@ class TradingPartner < ApplicationRecord
   belongs_to :organization
   has_many :trading_partner_ledgers, dependent: :restrict_with_error
   has_many :crop_sales, dependent: :restrict_with_error
+  has_many :sales_orders, dependent: :restrict_with_error
 
   before_validation :normalize_name
 
@@ -15,7 +16,6 @@ class TradingPartner < ApplicationRecord
   validates :primary_phone, presence: true
   validates :current_balance, presence: true, numericality: true
 
-  # Positive balance = we owe them. Negative = they owe us.
   def recalculate_ledger_balances!
     lock!
 

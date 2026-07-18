@@ -25,13 +25,69 @@
   <%= form_with url: url, method: method, local: true, class: "space-y-8" do |f| %>
     <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
       <div class="px-4 py-6 sm:p-8">
-        <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+        <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6" data-controller="customer-type">
+
+          <!-- Customer Type Selector -->
           <div class="sm:col-span-4">
-            <label for="customer_name" class="block text-sm font-semibold leading-6 text-gray-900">Customer Legal Name</label>
+            <label class="block text-sm font-semibold leading-6 text-gray-900">Customer Type</label>
             <div class="mt-2">
-              <%= f.text_field :customer_name, value: params[:customer_name] || sales_order.customer_name, required: true, placeholder: "e.g., Habib Grains Ltd. / Al-Murtaza Millers", class: "block w-full rounded-lg border-0 p-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 transition" %>
+              <select name="customer_type"
+                      data-customer-type-target="typeSelect"
+                      data-action="change->customer-type#toggle"
+                      class="block w-full rounded-lg border-0 p-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6">
+                <option value="walk_in" <%= "selected" if (params[:customer_type] || sales_order.customer_type) == "walk_in" %>>Walk-in / Cash Customer</option>
+                <option value="farmer_customer" <%= "selected" if (params[:customer_type] || sales_order.customer_type) == "farmer_customer" %>>Farmer (credit to Khata)</option>
+                <option value="trading_partner_customer" <%= "selected" if (params[:customer_type] || sales_order.customer_type) == "trading_partner_customer" %>>Trading Partner (credit to Ledger)</option>
+              </select>
             </div>
           </div>
+
+          <!-- Walk-in: free text name -->
+          <div class="sm:col-span-4" data-customer-type-target="customerNameSection">
+            <label class="block text-sm font-semibold leading-6 text-gray-900">Customer Name</label>
+            <div class="mt-2">
+              <input type="text"
+                     name="customer_name"
+                     value="<%= params[:customer_name] || sales_order.customer_name %>"
+                     placeholder="e.g., Habib Grains Ltd. / Al-Murtaza Millers"
+                     class="block w-full rounded-lg border-0 p-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 transition">
+            </div>
+          </div>
+
+          <!-- Farmer dropdown -->
+          <div class="sm:col-span-4 hidden" data-customer-type-target="farmerSection">
+            <label class="block text-sm font-semibold leading-6 text-gray-900">Select Farmer</label>
+            <div class="mt-2">
+              <select name="farmer_id"
+                      class="block w-full rounded-lg border-0 p-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6">
+                <option value="">-- Select Farmer --</option>
+                <% (@farmers || []).each do |farmer| %>
+                  <option value="<%= farmer.id %>"
+                          <%= "selected" if (params[:farmer_id] || sales_order.farmer_id).to_s == farmer.id.to_s %>>
+                    <%= farmer.full_name %> — Balance: Rs. <%= number_with_delimiter(farmer.current_balance.abs.round(2)) %>
+                  </option>
+                <% end %>
+              </select>
+            </div>
+          </div>
+
+          <!-- Trading Partner dropdown -->
+          <div class="sm:col-span-4 hidden" data-customer-type-target="tradingPartnerSection">
+            <label class="block text-sm font-semibold leading-6 text-gray-900">Select Trading Partner</label>
+            <div class="mt-2">
+              <select name="trading_partner_id"
+                      class="block w-full rounded-lg border-0 p-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6">
+                <option value="">-- Select Trading Partner --</option>
+                <% (@trading_partners || []).each do |partner| %>
+                  <option value="<%= partner.id %>"
+                          <%= "selected" if (params[:trading_partner_id] || sales_order.trading_partner_id).to_s == partner.id.to_s %>>
+                    <%= partner.business_name.titleize %> — Balance: Rs. <%= number_with_delimiter(partner.current_balance.abs.round(2)) %>
+                  </option>
+                <% end %>
+              </select>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

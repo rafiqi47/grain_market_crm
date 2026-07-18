@@ -38,7 +38,11 @@ Rails.application.routes.draw do
   end
 
   resources :farmers, only: [:index, :show, :new, :create, :edit, :update] do
-    resources :crop_purchases, only: [:new, :create], controller: "farmers/crop_purchases"
+    member do
+      get :khata_statement
+    end
+
+    resources :crop_purchases, only: [:new, :create, :index], controller: "farmers/crop_purchases"
 
     resources :khata_cycles, only: [:show] do
       member do
@@ -51,6 +55,10 @@ Rails.application.routes.draw do
   resources :crops, only: [:index, :show, :new, :create, :edit, :update]
 
   resources :trading_partners, only: [:index, :show, :new, :create, :edit, :update] do
+    member do
+      get :statement
+    end
+
     resources :trading_partner_ledgers, only: [:new, :create, :edit, :update, :destroy], controller: "trading_partners/trading_partner_ledgers"
     resources :crop_sales, only: [:new, :create], controller: "trading_partners/crop_sales"
   end
