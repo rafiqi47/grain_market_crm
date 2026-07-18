@@ -15,14 +15,20 @@
         required: true %>
   </div>
 
-  <div>
+  <div data-controller="urdu-keyboard">
     <%= f.label :slug, "Product Slug (Urdu Script)", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-    <%= f.text_field :slug, 
-                    placeholder: "مثال: ڈی-اے-پی", 
-                    dir: "rtl", 
-                    class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-medium text-right", 
+    <%= f.text_field :slug,
+                    placeholder: "مثال: ڈی-اے-پی",
+                    dir: "rtl",
+                    style: "font-family: 'Noto Nastaliq Urdu', serif; font-size: 16px;",
+                    data: {
+                      urdu_keyboard_target: "input",
+                      action: "focus->urdu-keyboard#focusField blur->urdu-keyboard#blurField"
+                    },
+                    class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-medium text-right",
                     required: true %>
     <p class="text-[10px] text-gray-400 mt-0.5">Enter the product identifier using Urdu characters. Spaces will turn into hyphens automatically.</p>
+    <div data-urdu-keyboard-target="keyboard"></div>
   </div>
 
   <!-- Row 2: Product SKU / Stock Code -->

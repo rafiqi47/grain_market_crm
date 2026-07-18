@@ -52,7 +52,7 @@ class TradingPartnersController < ApplicationController
   end
 
   def trading_partner_params
-    params.require(:trading_partner).permit(:business_name, :contact_person, :address, :primary_phone, :secondary_phone)
+    params.require(:trading_partner).permit(:business_name, :urdu_name, :contact_person, :address, :primary_phone, :secondary_phone)
   end
 
   def current_organization

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_18_081851) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_18_165321) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -59,6 +59,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_18_081851) do
     t.decimal "quantity_on_hand", precision: 12, scale: 2, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "urdu_slug", null: false
     t.index ["organization_id", "name"], name: "index_crops_on_organization_id_and_name", unique: true
     t.index ["organization_id"], name: "index_crops_on_organization_id"
   end
@@ -73,6 +74,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_18_081851) do
     t.integer "bardaana_balance", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "urdu_name", null: false
     t.index ["organization_id", "primary_phone"], name: "index_farmers_on_org_and_primary_phone", unique: true
     t.index ["organization_id"], name: "index_farmers_on_organization_id"
   end
@@ -295,6 +297,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_18_081851) do
     t.integer "bardaana_balance", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "urdu_name", null: false
     t.index ["organization_id", "business_name"], name: "index_trading_partners_on_org_and_name", unique: true
     t.index ["organization_id"], name: "index_trading_partners_on_organization_id"
   end

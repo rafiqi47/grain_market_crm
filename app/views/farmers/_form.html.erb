@@ -10,9 +10,25 @@
 
 <%= form_with model: farmer do |f| %>
   <div class="space-y-4 bg-white border border-gray-200 rounded-lg p-6">
+
     <div>
-      <%= f.label :full_name, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.label :full_name, "Full Name (English)", class: "block text-sm font-medium text-gray-700 mb-1" %>
       <%= f.text_field :full_name, class: "w-full rounded-md border-gray-300 shadow-sm" %>
+    </div>
+
+    <!-- Urdu Name with on-screen keyboard -->
+    <div data-controller="urdu-keyboard">
+      <%= f.label :urdu_name, "اردو نام", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :urdu_name,
+            dir: "rtl",
+            placeholder: "یہاں اردو نام لکھیں",
+            style: "font-family: 'Noto Nastaliq Urdu', serif; font-size: 18px;",
+            data: {
+              urdu_keyboard_target: "input",
+              action: "focus->urdu-keyboard#focusField blur->urdu-keyboard#blurField"
+            },
+            class: "w-full rounded-md border-gray-300 shadow-sm text-right" %>
+      <div data-urdu-keyboard-target="keyboard"></div>
     </div>
 
     <div>

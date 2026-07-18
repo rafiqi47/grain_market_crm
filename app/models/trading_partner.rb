@@ -5,16 +5,21 @@ class TradingPartner < ApplicationRecord
   has_many :crop_sales, dependent: :restrict_with_error
   has_many :sales_orders, dependent: :restrict_with_error
 
-  before_validation :normalize_name
+  before_validation :normalize_names
 
   validates :business_name, presence: true, uniqueness: {
     scope: :organization_id,
     case_sensitive: false,
     message: "has already been registered in your organization"
   }
+  validates :urdu_name, presence: true
   validates :address, presence: true
   validates :primary_phone, presence: true
   validates :current_balance, presence: true, numericality: true
+
+  def display_name_full
+    "#{urdu_name} — #{business_name}"
+  end
 
   def recalculate_ledger_balances!
     lock!
@@ -38,7 +43,8 @@ class TradingPartner < ApplicationRecord
 
   private
 
-  def normalize_name
+  def normalize_names
     self.business_name = business_name.strip if business_name.present?
+    self.urdu_name = urdu_name.strip if urdu_name.present?
   end
 end

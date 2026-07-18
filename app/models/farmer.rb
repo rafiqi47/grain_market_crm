@@ -5,9 +5,10 @@ class Farmer < ApplicationRecord
   has_many :crop_purchases, dependent: :restrict_with_error
   has_many :sales_orders, dependent: :restrict_with_error
 
-  before_validation :normalize_name
+  before_validation :normalize_names
 
   validates :full_name, presence: true
+  validates :urdu_name, presence: true
   validates :address, presence: true
   validates :primary_phone, presence: true, uniqueness: {
     scope: :organization_id,
@@ -19,9 +20,15 @@ class Farmer < ApplicationRecord
     khata_cycles.find_by(status: :active) || khata_cycles.create!(organization: organization, status: :active)
   end
 
+  # Display name for print: Urdu name + English name
+  def display_name_full
+    "#{urdu_name} — #{full_name}"
+  end
+
   private
 
-  def normalize_name
+  def normalize_names
     self.full_name = full_name.strip if full_name.present?
+    self.urdu_name = urdu_name.strip if urdu_name.present?
   end
 end

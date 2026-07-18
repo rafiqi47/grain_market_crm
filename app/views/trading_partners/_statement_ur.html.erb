@@ -1,0 +1,181 @@
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+
+<div style="font-family: 'Noto Nastaliq Urdu', serif; direction: rtl; text-align: right;">
+
+  <!-- Header -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #d1d5db; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 26px; font-weight: 700; color: #111827; margin: 0 0 4px;">تجارتی شراکت دار بیان</h1>
+      <p style="font-size: 13px; color: #6b7280; margin: 0;">تاریخ: <%= Date.current.strftime("%d %b %Y") %></p>
+    </div>
+    <div style="text-align: left;">
+      <p style="font-size: 16px; font-weight: 700; color: #111827; margin: 0;"><%= current_user.organization.name %></p>
+    </div>
+  </div>
+
+  <!-- Partner Info -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem;">
+      <p style="font-size: 11px; color: #9ca3af; margin: 0 0 6px; text-transform: uppercase;">شراکت دار کی تفصیل</p>
+      <p style="font-size: 20px; font-weight: 700; color: #111827; margin: 0;"><%= @trading_partner.urdu_name %></p>
+      <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0;"><%= @trading_partner.business_name %></p>
+      <% if @trading_partner.contact_person.present? %>
+        <p style="font-size: 13px; color: #6b7280; margin: 2px 0 0;"><%= @trading_partner.contact_person %></p>
+      <% end %>
+      <p style="font-size: 13px; color: #6b7280; margin: 2px 0 0;"><%= @trading_partner.primary_phone %></p>
+      <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0;"><%= @trading_partner.address %></p>
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem;">
+      <p style="font-size: 11px; color: #9ca3af; margin: 0 0 6px; text-transform: uppercase;">موجودہ حساب</p>
+      <p style="font-size: 26px; font-weight: 700; margin: 0; color: <%= @trading_partner.current_balance.negative? ? '#15803d' : '#dc2626' %>;">
+        Rs. <%= number_with_delimiter(@trading_partner.current_balance.abs.round(2)) %>
+      </p>
+      <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0;">
+        <%= @trading_partner.current_balance.negative? ? "وہ ہمارے مقروض ہیں" : "ہم ان کے مقروض ہیں" %>
+      </p>
+      <p style="font-size: 13px; color: #374151; margin: 8px 0 0;">
+        بردانہ: <strong><%= @trading_partner.bardaana_balance %> بوری</strong>
+        <%= @trading_partner.bardaana_balance > 0 ? "(وہ ہمارے مقروض)" : @trading_partner.bardaana_balance < 0 ? "(ہم ان کے مقروض)" : "(برابر)" %>
+      </p>
+    </div>
+  </div>
+
+  <!-- Ledger -->
+  <div style="margin-bottom: 2rem;">
+    <h2 style="font-size: 16px; font-weight: 700; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 1rem;">
+      کھاتہ
+    </h2>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <thead>
+        <tr style="background: #f3f4f6;">
+          <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">تاریخ</th>
+          <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">تفصیل</th>
+          <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">جمع</th>
+          <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">نام</th>
+          <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">بقایا</th>
+          <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">بوری</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @ledger_entries.any? %>
+          <% @ledger_entries.each do |entry| %>
+            <tr>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; white-space: nowrap;"><%= entry.created_at.strftime("%d %b %Y") %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151;"><%= entry.description %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #15803d; text-align: left;"><%= "Rs. #{number_with_delimiter(entry.amount.round(2))}" if entry.credit? %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #dc2626; text-align: left;"><%= "Rs. #{number_with_delimiter(entry.amount.round(2))}" if entry.debit? %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #111827; text-align: left;">Rs. <%= number_with_delimiter(entry.resulting_balance.round(2)) %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; text-align: left;">
+                <% if entry.bardaana_debit > 0 %>
+                  <span style="color: #ea580c;">-<%= entry.bardaana_debit %></span>
+                <% elsif entry.bardaana_credit > 0 %>
+                  <span style="color: #1d4ed8;">+<%= entry.bardaana_credit %></span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        <% else %>
+          <tr>
+            <td colspan="6" style="padding: 1rem; text-align: center; color: #9ca3af;">ابھی کوئی لین دین نہیں ہے</td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr style="background: #f9fafb;">
+          <td colspan="4" style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; color: #374151;">اختتامی بقایا</td>
+          <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; text-align: left; color: <%= @trading_partner.current_balance.negative? ? '#15803d' : '#dc2626' %>;">
+            Rs. <%= number_with_delimiter(@trading_partner.current_balance.abs.round(2)) %>
+          </td>
+          <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 600; text-align: left; color: #374151;"><%= @trading_partner.bardaana_balance %> بوری</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Crop Sales -->
+  <% if @crop_sales.any? %>
+    <div style="margin-bottom: 2rem;">
+      <h2 style="font-size: 16px; font-weight: 700; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 1rem;">
+        فصل فروخت
+      </h2>
+
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background: #f3f4f6;">
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">تاریخ</th>
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">فصل</th>
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">وزن</th>
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">ریٹ فی من</th>
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">کل رقم</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @crop_sales.each do |sale| %>
+            <tr>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280;"><%= sale.sale_date.strftime("%d %b %Y") %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151;">
+                <%= sale.crop.urdu_slug %> (<%= sale.crop.name %>)
+              </td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151; text-align: left;"><%= sale.weight_formatted %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151; text-align: left;">Rs. <%= number_with_delimiter(sale.rate.round(2)) %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #111827; text-align: left;">Rs. <%= number_with_delimiter(sale.total_value.round(2)) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr style="background: #f9fafb;">
+            <td colspan="4" style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; color: #374151;">کل فصل فروخت</td>
+            <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; color: #111827; text-align: left;">
+              Rs. <%= number_with_delimiter(@crop_sales.sum(&:total_value).round(2)) %>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  <% end %>
+
+  <!-- Product Sales -->
+  <% if @sales_orders.any? %>
+    <div style="margin-bottom: 2rem;">
+      <h2 style="font-size: 16px; font-weight: 700; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 1rem;">
+        ادھار فروخت (مال)
+      </h2>
+
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background: #f3f4f6;">
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">آرڈر نمبر</th>
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">تاریخ</th>
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">رقم</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @sales_orders.each do |order| %>
+            <tr>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151; font-family: monospace;"><%= order.order_number %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280;"><%= order.placed_at.strftime("%d %b %Y") %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #dc2626; font-weight: 600; text-align: left;">Rs. <%= number_with_delimiter(order.total_revenue.round(2)) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr style="background: #f9fafb;">
+            <td colspan="2" style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; color: #374151;">کل فروخت</td>
+            <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; color: #dc2626; text-align: left;">
+              Rs. <%= number_with_delimiter(@sales_orders.sum(&:total_revenue).round(2)) %>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  <% end %>
+
+  <!-- Footer -->
+  <div style="border-top: 1px solid #e5e7eb; padding-top: 1rem; margin-top: 2rem; display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af;">
+    <span>یہ بیان گرین سی آر ایم نے تیار کیا — <%= current_user.organization.name %></span>
+    <span>پرنٹ تاریخ: <%= Time.current.strftime("%d %b %Y, %I:%M %p") %></span>
+  </div>
+
+</div>

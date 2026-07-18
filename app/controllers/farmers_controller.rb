@@ -57,7 +57,7 @@ class FarmersController < ApplicationController
   end
 
   def farmer_params
-    params.require(:farmer).permit(:full_name, :address, :primary_phone, :secondary_phone)
+    params.require(:farmer).permit(:full_name, :urdu_name, :address, :primary_phone, :secondary_phone)
   end
 
   def current_organization
