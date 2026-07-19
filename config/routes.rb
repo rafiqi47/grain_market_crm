@@ -73,13 +73,15 @@ Rails.application.routes.draw do
     post :reverse, on: :member
   end
 
-  resources :inventory_alerts, only: [] do
+  resources :inventory_alerts, only: [:index] do
     member do
       patch :mark_as_read
     end
   end
 
   resources :profits, only: [:index]
+
+  resource :organization_settings, only: [:edit, :update]
 
   resources :expirations, only: [:index] do
     member do

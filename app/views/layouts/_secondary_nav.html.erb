@@ -1,0 +1,163 @@
+<%
+  # Helper: is the current path under any of these prefixes?
+  def nav_active?(paths)
+    paths.any? { |p| request.path == p || request.path.start_with?(p) }
+  end
+
+  # Which group is currently active (to highlight the group button)
+  inventory_active  = nav_active?([products_path, suppliers_path, inventory_adjustments_path, crops_path])
+  sales_active      = nav_active?([sales_orders_path, profits_path])
+  farmers_active    = nav_active?([farmers_path])
+  partners_active   = nav_active?([trading_partners_path])
+  alerts_active     = nav_active?([inventory_alerts_path])
+  expirations_active = nav_active?([expirations_path])
+
+  urgent_count  = current_user.organization.product_batches.where("expiry_date <= ? AND quantity_on_hand > 0", 7.days.from_now.to_date).count
+  alerts_count  = current_user.organization.inventory_alerts.unread.count
+%>
+
+<nav class="bg-white border-b border-gray-200 sticky top-16 z-40"
+     data-controller="nav-dropdown">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center gap-1 h-11">
+
+      <!-- Dashboard -->
+      <%= link_to dashboard_path,
+            class: "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-shrink-0 #{request.path == dashboard_path ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}" do %>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        Dashboard
+      <% end %>
+
+      <div class="w-px h-5 bg-gray-200 mx-1 flex-shrink-0"></div>
+
+      <!-- Alerts — standalone -->
+      <%= link_to inventory_alerts_path,
+            class: "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-shrink-0 #{alerts_active ? 'bg-amber-500 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}" do %>
+        Alerts
+        <% if alerts_count > 0 %>
+          <span class="<%= alerts_active ? 'bg-amber-400 text-amber-900' : 'bg-amber-100 text-amber-800' %> text-xs font-bold px-1.5 py-0.5 rounded-full">
+            <%= alerts_count %>
+          </span>
+        <% end %>
+      <% end %>
+
+      <!-- Expirations — standalone -->
+      <%= link_to expirations_path,
+            class: "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex-shrink-0 #{expirations_active ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}" do %>
+        Expirations
+        <% if urgent_count > 0 %>
+          <span class="<%= expirations_active ? 'bg-red-500 text-white' : 'bg-red-100 text-red-700' %> text-xs font-bold px-1.5 py-0.5 rounded-full">
+            <%= urgent_count %>
+          </span>
+        <% end %>
+      <% end %>
+
+      <div class="w-px h-5 bg-gray-200 mx-1 flex-shrink-0"></div>
+
+      <!-- Inventory dropdown -->
+      <div class="relative flex-shrink-0">
+        <button data-group="inventory"
+                data-child-active="<%= inventory_active %>"
+                data-action="click->nav-dropdown#toggle"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors <%= inventory_active ? 'bg-gray-900 text-white nav-active' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' %>">
+          Inventory
+          <svg data-chevron="inventory" class="w-3 h-3 transition-transform duration-150 <%= 'open' if inventory_active %>" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+          </svg>
+        </button>
+
+        <div data-dropdown="inventory"
+             class="absolute top-full left-0 mt-1.5 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden <%= 'open' if inventory_active %>"
+             style="display: none;">
+          <%= link_to products_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(products_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
+            Products
+          <% end %>
+          <%= link_to suppliers_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(suppliers_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
+            Suppliers
+          <% end %>
+          <div class="h-px bg-gray-100 my-1"></div>
+          <%= link_to crops_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(crops_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
+            Crop Stock
+          <% end %>
+          <%= link_to inventory_adjustments_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(inventory_adjustments_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
+            Adjustments
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Sales dropdown -->
+      <div class="relative flex-shrink-0">
+        <button data-group="sales"
+                data-child-active="<%= sales_active %>"
+                data-action="click->nav-dropdown#toggle"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors <%= sales_active ? 'bg-gray-900 text-white nav-active' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' %>">
+          Sales
+          <svg data-chevron="sales" class="w-3 h-3 transition-transform duration-150" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+          </svg>
+        </button>
+
+        <div data-dropdown="sales"
+             class="absolute top-full left-0 mt-1.5 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+             style="display: none;">
+          <%= link_to sales_orders_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(sales_orders_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
+            Sales Orders
+          <% end %>
+          <%= link_to profits_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(profits_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
+            Profit Analytics
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Farmers dropdown -->
+      <div class="relative flex-shrink-0">
+        <button data-group="farmers"
+                data-child-active="<%= farmers_active %>"
+                data-action="click->nav-dropdown#toggle"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors <%= farmers_active ? 'bg-green-700 text-white nav-active' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' %>">
+          Farmers
+          <svg data-chevron="farmers" class="w-3 h-3 transition-transform duration-150" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+          </svg>
+        </button>
+
+        <div data-dropdown="farmers"
+             class="absolute top-full left-0 mt-1.5 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+             style="display: none;">
+          <%= link_to farmers_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(farmers_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
+            Farmers Khata
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Partners dropdown -->
+      <div class="relative flex-shrink-0">
+        <button data-group="partners"
+                data-child-active="<%= partners_active %>"
+                data-action="click->nav-dropdown#toggle"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors <%= partners_active ? 'bg-blue-700 text-white nav-active' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' %>">
+          Partners
+          <svg data-chevron="partners" class="w-3 h-3 transition-transform duration-150" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+          </svg>
+        </button>
+
+        <div data-dropdown="partners"
+             class="absolute top-full left-0 mt-1.5 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+             style="display: none;">
+          <%= link_to trading_partners_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(trading_partners_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
+            Trading Partners
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+<style>
+  [data-dropdown].open { display: block !important; }
+  [data-chevron].open { transform: rotate(180deg); }
+</style>

@@ -1,0 +1,16 @@
+<div class="space-y-1">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900">Inventory Alerts</h1>
+    <span class="text-sm text-gray-500"><%= @alerts.count %> unread</span>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <% if @alerts.any? %>
+      <%= render partial: "inventory_alerts/alert", collection: @alerts, as: :alert %>
+    <% else %>
+      <div class="px-6 py-12 text-center text-sm text-gray-400">
+        All clear — no unread alerts.
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -4,7 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= content_for?(:title) ? yield(:title) : "Statement — Grain CRM" %></title>
+    <%= stylesheet_link_tag "tailwind", media: "all" %>
     <%= stylesheet_link_tag "application", media: "all" %>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
     <style>
       @media print {
         .no-print { display: none !important; }
@@ -12,24 +14,39 @@
         table { page-break-inside: auto; }
         tr { page-break-inside: avoid; page-break-after: auto; }
       }
-      body { font-family: sans-serif; background: white; color: #111; }
+      body { font-family: sans-serif; background: #f9fafb; color: #111; margin: 0; }
     </style>
   </head>
-  <body class="bg-white">
-    <div class="no-print flex items-center justify-between px-8 py-3 bg-gray-100 border-b border-gray-300">
-      <span class="text-sm text-gray-600">Preview — this bar will not appear when printed</span>
-      <div class="flex gap-3">
-        <button onclick="window.print()" class="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700">
-          Print / Save as PDF
+  <body>
+
+    <!-- Print Bar -->
+    <div class="no-print bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-semibold text-gray-900">Grain CRM</span>
+        <span class="w-px h-4 bg-gray-200"></span>
+        <span class="text-sm text-gray-500"><%= content_for?(:title) ? yield(:title) : "Statement" %></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="window.close()"
+                class="px-4 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+          Close
         </button>
-        <button onclick="window.history.back()" class="bg-white border border-gray-300 text-gray-700 text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-50">
-          Go Back
+        <button onclick="window.print()"
+                class="px-4 py-1.5 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-700 transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+          </svg>
+          Print / Save as PDF
         </button>
       </div>
     </div>
 
-    <div class="max-w-4xl mx-auto px-8 py-6">
-      <%= yield %>
+    <!-- Statement Content -->
+    <div class="max-w-4xl mx-auto px-8 py-8">
+      <div class="bg-white rounded-xl border border-gray-200 p-8">
+        <%= yield %>
+      </div>
     </div>
+
   </body>
 </html>

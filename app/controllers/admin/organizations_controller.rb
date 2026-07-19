@@ -39,6 +39,7 @@ module Admin
     def organization_params
       permitted = params.require(:organization).permit(
         :name,
+        :urdu_name,
         :registration_number,
         owner_attributes: [:full_name, :email, :phone]
       )

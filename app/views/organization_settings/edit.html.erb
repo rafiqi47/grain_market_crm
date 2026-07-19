@@ -1,0 +1,56 @@
+<div class="max-w-xl mx-auto py-8">
+  <h1 class="text-2xl font-semibold text-gray-900 mb-1">Organization Settings</h1>
+  <p class="text-gray-500 text-sm mb-6"><%= current_user.organization.name %></p>
+
+  <% if notice.present? %>
+    <div class="bg-green-50 border border-green-200 text-green-700 rounded-md p-4 mb-6 text-sm">
+      <%= notice %>
+    </div>
+  <% end %>
+
+  <div class="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+
+    <div>
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Organization Identity</p>
+      <div class="space-y-1 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Name</span>
+          <span class="font-medium text-gray-900"><%= current_user.organization.name %></span>
+        </div>
+        <% if current_user.organization.registration_number.present? %>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Registration</span>
+            <span class="font-medium text-gray-900"><%= current_user.organization.registration_number %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <hr class="border-gray-100">
+
+    <%= form_with model: current_user.organization, url: organization_settings_path, method: :patch do |f| %>
+      <div>
+        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Urdu Settings</p>
+        <p class="text-xs text-gray-400 mb-4">Used on Urdu print statements shown to farmers and trading partners.</p>
+
+        <div data-controller="urdu-keyboard">
+          <%= f.label :urdu_name, "اردو نام", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :urdu_name,
+                dir: "rtl",
+                placeholder: "یہاں اردو نام لکھیں",
+                style: "font-family: 'Noto Nastaliq Urdu', serif; font-size: 18px;",
+                data: {
+                  urdu_keyboard_target: "input",
+                  action: "focus->urdu-keyboard#focusField blur->urdu-keyboard#blurField"
+                },
+                class: "w-full rounded-md border-gray-300 shadow-sm text-right" %>
+          <div data-urdu-keyboard-target="keyboard"></div>
+        </div>
+      </div>
+
+      <div class="pt-4">
+        <%= f.submit "Save Settings", class: "w-full bg-gray-900 hover:bg-gray-700 text-white font-medium rounded-md py-2 px-4 cursor-pointer" %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -31,24 +31,12 @@
       AND they are NOT looking at the public home/landing page.
     %>
     <% if user_signed_in? && !(controller_name == 'home' && action_name == 'index') %>
-      <%#
-        FIX: min-h-0 breaks the structural layout flex expansion trap.
-        h-full ensures it shares the remaining viewport space perfectly.
-      %>
-      <div class="flex flex-1 min-h-0 h-full overflow-hidden" data-controller="sidebar">
-
-        <%# Ensure your sidebar template configuration contains flex-shrink-0 %>
-        <%= render "shared/sidebar" %>
-
-        <%#
-          FIX: main container must have strict h-full and min-h-0 constraints 
-          so that inner elements don't stretch the layout vertically.
-        %>
-        <main class="flex-grow flex flex-col h-full min-h-0 overflow-y-auto p-6 md:p-10">
+      <%= render "layouts/secondary_nav" %>
+      <main class="flex-grow min-h-0 overflow-y-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <%= yield %>
-        </main>
-
-      </div>
+        </div>
+      </main>
     <% else %>
       <main class="flex-grow min-h-0 h-full overflow-y-auto">
         <%= yield %>

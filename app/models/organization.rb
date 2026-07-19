@@ -28,11 +28,17 @@ class Organization < ApplicationRecord
   # Allow nested management for onboarding forms
   accepts_nested_attributes_for :owner, reject_if: :all_blank
 
+  before_validation :normalize_urdu_name
+
   # Validations
   validates :name, presence: true, uniqueness: true
   validate  :single_owner_constraint
 
   private
+
+  def normalize_urdu_name
+    self.urdu_name = urdu_name.strip if urdu_name.present?
+  end
 
   def single_owner_constraint
     all_owners = users.select { |u| u.owner? && !u.marked_for_destruction? }
