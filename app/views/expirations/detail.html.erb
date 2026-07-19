@@ -1,0 +1,116 @@
+<%= turbo_frame_tag "batch-detail-#{@batch.id}" do %>
+  <div class="bg-blue-50 border-t border-b border-blue-100 px-6 py-5">
+    <div class="grid grid-cols-3 gap-6">
+
+      <!-- Product Info -->
+      <div>
+        <p class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3">Product Details</p>
+        <div class="space-y-2">
+          <div>
+            <p class="text-xs text-gray-500">Product Name</p>
+            <p class="text-sm font-semibold text-gray-900"><%= @batch.product.name %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Category</p>
+            <p class="text-sm font-medium text-gray-700"><%= @batch.product.category.humanize %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">SKU</p>
+            <p class="text-sm font-mono text-gray-700"><%= @batch.product.sku.presence || "—" %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Urdu Name</p>
+            <p class="text-sm text-gray-700" style="font-family: 'Noto Nastaliq Urdu', serif; direction: rtl;">
+              <%= @batch.product.slug.presence || "—" %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Batch Info -->
+      <div>
+        <p class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3">Batch Details</p>
+        <div class="space-y-2">
+          <div>
+            <p class="text-xs text-gray-500">Batch Number</p>
+            <p class="text-sm font-mono font-semibold text-gray-900"><%= @batch.batch_number %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Manufacture Date</p>
+            <p class="text-sm font-medium text-gray-700">
+              <%= @batch.manufacture_date&.strftime("%d %b %Y") || "—" %>
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Expiry Date</p>
+            <% days_left = (@batch.expiry_date - Date.current).to_i %>
+            <% expired = @batch.expiry_date < Date.current %>
+            <p class="text-sm font-bold <%= expired ? 'text-red-600' : days_left <= 7 ? 'text-red-500' : days_left <= 30 ? 'text-amber-600' : 'text-green-600' %>">
+              <%= @batch.expiry_date.strftime("%d %b %Y") %>
+              <span class="font-normal text-xs ml-1">
+                (<%= expired ? "#{days_left.abs} days ago" : "#{days_left} days left" %>)
+              </span>
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Stock on Hand</p>
+            <p class="text-sm font-semibold text-gray-900"><%= @batch.quantity_on_hand %> units</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Purchase Price / Unit</p>
+            <p class="text-sm font-medium text-gray-700">Rs. <%= number_with_delimiter(@batch.purchase_price_per_unit.round(2)) %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Stock Value at Risk</p>
+            <p class="text-sm font-bold <%= expired ? 'text-red-600' : 'text-amber-600' %>">
+              Rs. <%= number_with_delimiter((@batch.quantity_on_hand * @batch.purchase_price_per_unit).round(2)) %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supplier Info -->
+      <div>
+        <p class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3">Supplier Details</p>
+        <div class="space-y-2">
+          <div>
+            <p class="text-xs text-gray-500">Company Name</p>
+            <p class="text-sm font-semibold text-gray-900"><%= @batch.product.supplier.name.titleize %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Type</p>
+            <p class="text-sm font-medium text-gray-700"><%= @batch.product.supplier.company_type.humanize %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Phone</p>
+            <p class="text-sm font-medium text-gray-700"><%= @batch.product.supplier.phone.presence || "—" %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Email</p>
+            <p class="text-sm font-medium text-gray-700"><%= @batch.product.supplier.email.presence || "—" %></p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Current Balance</p>
+            <p class="text-sm font-medium <%= @batch.product.supplier.current_balance > 0 ? 'text-red-600' : 'text-green-700' %>">
+              Rs. <%= number_with_delimiter(@batch.product.supplier.current_balance.abs.round(2)) %>
+              <span class="text-xs text-gray-400">(<%= @batch.product.supplier.current_balance > 0 ? "we owe them" : "they owe us" %>)</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Quick action -->
+        <div class="mt-4 pt-4 border-t border-blue-100">
+          <%= link_to supplier_path(@batch.product.supplier),
+                data: { turbo_frame: "_top" },
+                class: "inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800" do %>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
+            </svg>
+            View Supplier Ledger
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+<% end %>

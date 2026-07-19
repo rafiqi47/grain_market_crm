@@ -80,4 +80,10 @@ Rails.application.routes.draw do
   end
 
   resources :profits, only: [:index]
+
+  resources :expirations, only: [:index] do
+    member do
+      get :detail
+    end
+  end
 end

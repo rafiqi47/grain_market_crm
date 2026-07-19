@@ -88,6 +88,23 @@
         <span data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">Inventory Operations</span>
       <% end %>
 
+      <!-- Expiration Monitor -->
+      <%= link_to expirations_path, title: "Expiration Monitor",
+                  class: "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-all hover:bg-gray-800 hover:text-white #{'bg-gray-800 text-white' if request.path.start_with?('/expirations')}" do %>
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span data-sidebar-toggle-target="textOnly" class="whitespace-nowrap">
+          Expiration Monitor
+          <% expired_count = current_user.organization.product_batches.where("expiry_date < ? AND quantity_on_hand > 0", Date.current).count %>
+          <% critical_count = current_user.organization.product_batches.where(expiry_date: Date.current..7.days.from_now.to_date).where("quantity_on_hand > 0").count %>
+          <% total_urgent = expired_count + critical_count %>
+          <% if total_urgent > 0 %>
+            <span class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white"><%= total_urgent %></span>
+          <% end %>
+        </span>
+      <% end %>
+
       <%= link_to profits_path, title: "Profit Analytics",
             class: "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-all hover:bg-gray-800 hover:text-white #{'bg-gray-800 text-white' if current_page?(profits_path) || request.path.start_with?('/profits')}" do %>
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

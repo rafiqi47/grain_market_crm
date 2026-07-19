@@ -169,4 +169,171 @@
       </div>
     </div>
   <% end %>
+
+  <!-- Crop Profit Report -->
+  <div class="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden mt-8">
+    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+      <div>
+        <h2 class="text-md font-bold text-gray-900">Crop Trading Profit / فصل منافع</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Buy rate from farmers vs sell rate to trading partners — margin per crop.</p>
+      </div>
+      <span class="text-xs bg-gray-200 text-gray-700 font-semibold px-2.5 py-1 rounded-full font-mono">
+        <%= @crop_profit_report.size %> Crops
+      </span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Crop</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Purchased (KG)</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Avg Buy Rate/Maund</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Purchase Cost</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Sold (KG)</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Avg Sell Rate/Maund</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Sale Revenue</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Commission + Labor</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Net Margin</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          <% if @crop_profit_report.any? %>
+            <% @crop_profit_report.each do |row| %>
+              <tr class="hover:bg-gray-50/70 transition-colors">
+
+                <!-- Crop Name -->
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-gray-900"><%= row[:crop_name] %></span>
+                    <% if row[:crop_urdu].present? %>
+                      <span class="text-gray-300">/</span>
+                      <span class="inline-block px-1.5 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-800 rounded"
+                            dir="rtl" style="font-family: 'Noto Nastaliq Urdu', serif;">
+                        <%= row[:crop_urdu] %>
+                      </span>
+                    <% end %>
+                  </div>
+                </td>
+
+                <!-- Purchased KG -->
+                <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-700">
+                  <% if row[:purchased_kg] > 0 %>
+                    <% maund = (row[:purchased_kg] / 40).to_i %>
+                    <% kg = (row[:purchased_kg] % 40).round(2) %>
+                    <%= maund %>M <%= kg %>KG
+                  <% else %>
+                    <span class="text-gray-300">—</span>
+                  <% end %>
+                </td>
+
+                <!-- Avg Buy Rate -->
+                <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-600">
+                  <% if row[:avg_buy_rate] > 0 %>
+                    Rs. <%= number_with_delimiter(sprintf('%.2f', row[:avg_buy_rate])) %>
+                  <% else %>
+                    <span class="text-gray-300">—</span>
+                  <% end %>
+                </td>
+
+                <!-- Purchase Cost -->
+                <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-600">
+                  <% if row[:purchase_cost] > 0 %>
+                    Rs. <%= number_with_delimiter(sprintf('%.2f', row[:purchase_cost])) %>
+                  <% else %>
+                    <span class="text-gray-300">—</span>
+                  <% end %>
+                </td>
+
+                <!-- Sold KG -->
+                <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-700">
+                  <% if row[:sold_kg] > 0 %>
+                    <% maund = (row[:sold_kg] / 40).to_i %>
+                    <% kg = (row[:sold_kg] % 40).round(2) %>
+                    <%= maund %>M <%= kg %>KG
+                  <% else %>
+                    <span class="text-gray-300">—</span>
+                  <% end %>
+                </td>
+
+                <!-- Avg Sell Rate -->
+                <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-600">
+                  <% if row[:avg_sell_rate] > 0 %>
+                    Rs. <%= number_with_delimiter(sprintf('%.2f', row[:avg_sell_rate])) %>
+                  <% else %>
+                    <span class="text-gray-300">—</span>
+                  <% end %>
+                </td>
+
+                <!-- Sale Revenue -->
+                <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-600">
+                  <% if row[:sale_revenue] > 0 %>
+                    Rs. <%= number_with_delimiter(sprintf('%.2f', row[:sale_revenue])) %>
+                  <% else %>
+                    <span class="text-gray-300">—</span>
+                  <% end %>
+                </td>
+
+                <!-- Commission + Labor -->
+                <td class="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-500">
+                  <% deductions = row[:commission] + row[:labor] %>
+                  <% if deductions > 0 %>
+                    Rs. <%= number_with_delimiter(sprintf('%.2f', deductions)) %>
+                  <% else %>
+                    <span class="text-gray-300">—</span>
+                  <% end %>
+                </td>
+
+                <!-- Net Margin -->
+                <td class="px-6 py-4 whitespace-nowrap text-right font-mono font-bold <%= row[:margin] >= 0 ? 'text-emerald-600' : 'text-red-600' %>">
+                  Rs. <%= number_with_delimiter(sprintf('%.2f', row[:margin])) %>
+                  <% if row[:purchase_cost] > 0 && row[:sale_revenue] > 0 %>
+                    <% margin_pct = ((row[:margin] / row[:purchase_cost]) * 100).round(1) %>
+                    <span class="block text-xs font-normal <%= margin_pct >= 0 ? 'text-emerald-500' : 'text-red-400' %>">
+                      <%= margin_pct %>%
+                    </span>
+                  <% end %>
+                </td>
+
+              </tr>
+            <% end %>
+
+            <!-- Totals Row -->
+            <tr class="bg-gray-50 border-t-2 border-gray-200">
+              <td class="px-6 py-3 text-xs font-bold text-gray-700 uppercase">Totals</td>
+              <td class="px-6 py-3 text-right font-mono font-bold text-gray-700">
+                <% total_purchased = @crop_profit_report.sum { |r| r[:purchased_kg] } %>
+                <%= (total_purchased / 40).to_i %>M <%= (total_purchased % 40).round(2) %>KG
+              </td>
+              <td class="px-6 py-3"></td>
+              <td class="px-6 py-3 text-right font-mono font-bold text-gray-700">
+                Rs. <%= number_with_delimiter(sprintf('%.2f', @crop_profit_report.sum { |r| r[:purchase_cost] })) %>
+              </td>
+              <td class="px-6 py-3 text-right font-mono font-bold text-gray-700">
+                <% total_sold = @crop_profit_report.sum { |r| r[:sold_kg] } %>
+                <%= (total_sold / 40).to_i %>M <%= (total_sold % 40).round(2) %>KG
+              </td>
+              <td class="px-6 py-3"></td>
+              <td class="px-6 py-3 text-right font-mono font-bold text-gray-700">
+                Rs. <%= number_with_delimiter(sprintf('%.2f', @crop_profit_report.sum { |r| r[:sale_revenue] })) %>
+              </td>
+              <td class="px-6 py-3 text-right font-mono font-bold text-gray-500">
+                Rs. <%= number_with_delimiter(sprintf('%.2f', @crop_profit_report.sum { |r| r[:commission] + r[:labor] })) %>
+              </td>
+              <td class="px-6 py-3 text-right font-mono font-bold <%= @crop_profit_report.sum { |r| r[:margin] } >= 0 ? 'text-emerald-600' : 'text-red-600' %>">
+                Rs. <%= number_with_delimiter(sprintf('%.2f', @crop_profit_report.sum { |r| r[:margin] })) %>
+              </td>
+            </tr>
+
+          <% else %>
+            <tr>
+              <td colspan="9" class="px-6 py-12 text-center text-sm text-gray-400 italic bg-gray-50/50">
+                No crop purchases or sales recorded in this period.
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

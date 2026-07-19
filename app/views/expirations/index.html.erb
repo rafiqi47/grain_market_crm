@@ -1,0 +1,164 @@
+<div class="max-w-6xl mx-auto py-8 px-4">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900">Expiration Monitor</h1>
+      <p class="text-gray-500 text-sm mt-1">All active batches with expiry dates, ordered by soonest first.</p>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6" data-controller="expiration-filter">
+    <div class="flex flex-wrap items-center gap-3">
+
+      <%= link_to expirations_path, class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors #{params[:filter].blank? ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}" do %>
+        All Batches
+      <% end %>
+
+      <%= link_to expirations_path(filter: "expired"), class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors #{params[:filter] == 'expired' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-red-600 border-red-300 hover:bg-red-50'}" do %>
+        Expired
+        <span class="<%= params[:filter] == 'expired' ? 'bg-red-500 text-white' : 'bg-red-100 text-red-700' %> text-xs font-bold px-1.5 py-0.5 rounded-full">
+          <%= @expired_count %>
+        </span>
+      <% end %>
+
+      <%= link_to expirations_path(filter: "7_days"), class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors #{params[:filter] == '7_days' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-red-500 border-red-200 hover:bg-red-50'}" do %>
+        Within 7 Days
+        <span class="<%= params[:filter] == '7_days' ? 'bg-red-400 text-white' : 'bg-red-50 text-red-600' %> text-xs font-bold px-1.5 py-0.5 rounded-full">
+          <%= @within_7_days %>
+        </span>
+      <% end %>
+
+      <%= link_to expirations_path(filter: "30_days"), class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors #{params[:filter] == '30_days' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-600 border-amber-300 hover:bg-amber-50'}" do %>
+        Within 30 Days
+        <span class="<%= params[:filter] == '30_days' ? 'bg-amber-400 text-white' : 'bg-amber-50 text-amber-700' %> text-xs font-bold px-1.5 py-0.5 rounded-full">
+          <%= @within_30_days %>
+        </span>
+      <% end %>
+
+      <!-- Custom Date Range -->
+      <%= form_with url: expirations_path, method: :get, class: "flex items-center gap-2" do |f| %>
+        <%= hidden_field_tag :filter, "custom" %>
+        <span class="text-sm text-gray-500">From</span>
+        <%= date_field_tag :from, params[:from], class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5" %>
+        <span class="text-sm text-gray-500">to</span>
+        <%= date_field_tag :to, params[:to], class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5" %>
+        <%= submit_tag "Apply", class: "px-3 py-1.5 bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium rounded-md cursor-pointer" %>
+      <% end %>
+
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>
+          <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
+          <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
+          <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Days Left</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @batches.each do |batch| %>
+          <% days_left = (batch.expiry_date - Date.current).to_i %>
+          <% expired = batch.expiry_date < Date.current %>
+          <% critical = !expired && days_left <= 7 %>
+          <% warning = !expired && !critical && days_left <= 30 %>
+
+          <tr class="hover:bg-gray-50 cursor-pointer transition-colors"
+              data-batch-id="<%= batch.id %>"
+              onclick="loadDetail(<%= batch.id %>)">
+            <td class="px-4 py-3">
+              <% if expired %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800 border border-red-200">Expired</span>
+              <% elsif critical %>
+                <span class="flex items-center gap-1.5">
+                  <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                  </span>
+                  <span class="text-xs font-bold text-red-600">Critical</span>
+                </span>
+              <% elsif warning %>
+                <span class="inline-flex items-center gap-1.5">
+                  <span class="h-2 w-2 rounded-full bg-amber-500 inline-block"></span>
+                  <span class="text-xs font-bold text-amber-600">Warning</span>
+                </span>
+              <% else %>
+                <span class="inline-flex items-center gap-1.5">
+                  <span class="h-2 w-2 rounded-full bg-green-500 inline-block"></span>
+                  <span class="text-xs font-bold text-green-600">OK</span>
+                </span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3">
+              <p class="text-sm font-medium text-gray-900"><%= batch.product.name %></p>
+              <p class="text-xs text-gray-400"><%= batch.product.category.humanize %></p>
+            </td>
+            <td class="px-4 py-3 text-sm font-mono text-gray-700"><%= batch.batch_number %></td>
+            <td class="px-4 py-3 text-sm text-gray-700"><%= batch.product.supplier.name.titleize %></td>
+            <td class="px-4 py-3 text-sm text-right font-medium text-gray-900"><%= batch.quantity_on_hand %></td>
+            <td class="px-4 py-3 text-sm text-right text-gray-700"><%= batch.expiry_date.strftime("%d %b %Y") %></td>
+            <td class="px-4 py-3 text-right">
+              <% if expired %>
+                <span class="text-sm font-bold text-red-600"><%= days_left.abs %> days ago</span>
+              <% else %>
+                <span class="text-sm font-bold <%= critical ? 'text-red-600' : warning ? 'text-amber-600' : 'text-green-600' %>">
+                  <%= days_left %> days
+                </span>
+              <% end %>
+            </td>
+          </tr>
+
+          <!-- Detail row — hidden by default, loaded via fetch -->
+          <tr id="detail-row-<%= batch.id %>" class="hidden">
+            <td colspan="7" class="p-0">
+              <turbo-frame id="batch-detail-<%= batch.id %>"></turbo-frame>
+            </td>
+          </tr>
+        <% end %>
+
+        <% if @batches.empty? %>
+          <tr>
+            <td colspan="7" class="px-4 py-12 text-center text-gray-400 text-sm">
+              No batches found for the selected filter.
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let openBatchId = null
+
+  function loadDetail(batchId) {
+    const detailRow = document.getElementById(`detail-row-${batchId}`)
+    const frame = document.getElementById(`batch-detail-${batchId}`)
+
+    // If clicking the same row — toggle closed
+    if (openBatchId === batchId) {
+      detailRow.classList.add("hidden")
+      openBatchId = null
+      return
+    }
+
+    // Close any previously open row
+    if (openBatchId !== null) {
+      document.getElementById(`detail-row-${openBatchId}`)?.classList.add("hidden")
+    }
+
+    // Load detail via Turbo Frame if not already loaded
+    if (!frame.src) {
+      frame.src = `/expirations/${batchId}/detail`
+    }
+
+    detailRow.classList.remove("hidden")
+    openBatchId = batchId
+  }
+</script>
