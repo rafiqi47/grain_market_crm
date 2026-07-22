@@ -6,6 +6,7 @@ class ProductBatch < ApplicationRecord
   has_many   :inventory_alerts, dependent: :destroy
   has_many   :inventory_adjustments, dependent: :destroy
   has_many   :sales_line_items, dependent: :destroy
+  belongs_to :purchase_order, optional: true
 
   delegate :category, to: :product, prefix: true, allow_nil: true
 

@@ -102,9 +102,17 @@
               <% end %>
             </td>
             <td class="px-4 py-3 text-right">
-              <%= link_to "Edit", edit_product_product_batch_path(product, batch),
-                    class: "text-xs text-indigo-600 hover:text-indigo-900 font-semibold",
-                    data: { turbo_frame: "modal" } %>
+              <div class="flex items-center justify-end gap-3">
+                <%= link_to "Edit", edit_product_product_batch_path(product, batch),
+                      class: "text-xs text-indigo-600 hover:text-indigo-900 font-semibold",
+                      data: { turbo_frame: "modal" } %>
+                <%= button_to product_product_batch_path(product, batch),
+                      method: :delete,
+                      data: { turbo_confirm: "Delete this batch? This will reverse its full value (#{number_to_currency(batch.quantity_on_hand * batch.purchase_price_per_unit, unit: 'Rs. ', precision: 0)}) from the supplier ledger." },
+                      class: "text-xs text-red-600 hover:text-red-900 font-semibold bg-transparent border-0 p-0 cursor-pointer" do %>
+                  Delete
+                <% end %>
+              </div>
             </td>
           </tr>
         <% end %>

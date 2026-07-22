@@ -3,3 +3,20 @@
 <%= turbo_stream.update "products_catalog_table" do %>
   <%= render "products/table", products: current_user.organization.products.includes(:supplier, :product_batches).order(name: :asc) %>
 <% end %>
+
+<% if @product.supplier_id.present? %>
+  <%= turbo_stream.replace "supplier-product-#{@product.id}" do %>
+    <%= turbo_frame_tag "supplier-product-#{@product.id}" do %>
+      <%= render "suppliers/products/show_content",
+            product: @product,
+            product_batches: @product.product_batches.order(created_at: :desc),
+            supplier: @product.supplier %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% if @product.supplier_id.present? %>
+  <%= turbo_stream.replace "supplier-balance-#{@product.supplier.id}" do %>
+    <%= render "suppliers/balance_card", supplier: @product.supplier.reload %>
+  <% end %>
+<% end %>

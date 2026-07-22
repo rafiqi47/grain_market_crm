@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_20_093532) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_22_034947) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -162,10 +162,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_20_093532) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "organization_id"
+    t.bigint "purchase_order_id"
     t.index ["expiry_date"], name: "index_product_batches_on_expiry_date"
     t.index ["organization_id"], name: "index_product_batches_on_organization_id"
     t.index ["product_id", "batch_number"], name: "index_product_batches_on_product_id_and_batch_number"
     t.index ["product_id"], name: "index_product_batches_on_product_id"
+    t.index ["purchase_order_id"], name: "index_product_batches_on_purchase_order_id"
   end
 
   create_table "products", force: :cascade do |t|
@@ -339,6 +341,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_20_093532) do
   add_foreign_key "khata_transactions", "organizations"
   add_foreign_key "product_batches", "organizations"
   add_foreign_key "product_batches", "products"
+  add_foreign_key "product_batches", "purchase_orders"
   add_foreign_key "products", "organizations"
   add_foreign_key "products", "suppliers"
   add_foreign_key "purchase_orders", "organizations"

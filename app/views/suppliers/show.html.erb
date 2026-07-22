@@ -9,12 +9,7 @@
     </div>
 
     <div class="flex items-center space-x-3">
-      <div class="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-right">
-        <span class="block text-[10px] font-bold text-gray-400 uppercase">Current Balance</span>
-        <span class="text-xl font-black font-mono <%= @supplier.current_balance > 0 ? 'text-red-600' : 'text-emerald-700' %>">
-          Rs. <%= number_with_delimiter(@supplier.current_balance) %>
-        </span>
-      </div>
+      <%= render "suppliers/balance_card", supplier: @supplier %>
 
       <%= link_to "Record Purchase", new_supplier_purchase_path(@supplier),
             class: "px-4 py-2.5 bg-green-600 text-white text-xs font-semibold rounded shadow hover:bg-green-700 transition-all" %>

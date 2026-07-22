@@ -53,6 +53,7 @@ class Suppliers::PurchasesController < ApplicationController
 
           product.product_batches.create!(
             organization:            current_organization,
+            purchase_order:          purchase_order,
             initial_quantity:        kg,
             quantity_on_hand:        kg,
             purchase_price_per_unit: price_per_kg,
@@ -63,6 +64,7 @@ class Suppliers::PurchasesController < ApplicationController
         else
           product.product_batches.create!(
             organization:            current_organization,
+            purchase_order:          purchase_order,
             batch_number:            item[:batch_number].presence,
             initial_quantity:        item[:quantity].to_f,
             quantity_on_hand:        item[:quantity].to_f,
