@@ -12,6 +12,10 @@ class SuppliersController < ApplicationController
     @ledger_entries = @supplier.supplier_ledgers
                                .includes(:purchase_order)
                                .latest
+
+    @products = @supplier.products
+                         .includes(:product_batches)
+                         .order(:name)
   end
 
   def new

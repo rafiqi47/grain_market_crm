@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_19_133358) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_20_093532) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -154,8 +154,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_19_133358) do
   create_table "product_batches", force: :cascade do |t|
     t.bigint "product_id", null: false
     t.string "batch_number"
-    t.integer "initial_quantity", default: 0, null: false
-    t.integer "quantity_on_hand", default: 0, null: false
+    t.decimal "initial_quantity", precision: 12, scale: 2, default: "0.0", null: false
+    t.decimal "quantity_on_hand", precision: 12, scale: 2, default: "0.0", null: false
     t.date "manufacture_date"
     t.date "expiry_date"
     t.decimal "purchase_price_per_unit", precision: 10, scale: 2, default: "0.0", null: false

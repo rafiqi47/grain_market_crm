@@ -14,7 +14,7 @@
     <tbody class="bg-white divide-y divide-gray-200">
       <% if suppliers.any? %>
         <% suppliers.each do |supplier| %>
-          <tr class="hover:bg-gray-50 transition-colors">
+          <tr class="hover:bg-gray-50 transition-colors cursor-pointer" onclick="window.location='<%= supplier_path(supplier) %>'">
             <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900 capitalize">
               <%= supplier.name %>
             </td>
@@ -36,9 +36,9 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
               <!-- Statement View Route (Breaks out of Hotwire modal frame targeting top level) -->
-              <%= link_to "Statement", supplier_path(supplier), class: "text-indigo-600 hover:text-indigo-900 transition-colors font-semibold", data: { turbo_frame: "_top" } %>
-              
-              <%= link_to "Edit", edit_supplier_path(supplier), class: "text-gray-500 hover:text-gray-700 transition-colors", data: { turbo_frame: "modal" } %>
+              <%= link_to "Statement", supplier_path(supplier), class: "text-indigo-600 hover:text-indigo-900 transition-colors font-semibold", data: { turbo_frame: "_top" }, onclick: "event.stopPropagation()" %>
+
+              <%= link_to "Edit", edit_supplier_path(supplier), class: "text-gray-500 hover:text-gray-700 transition-colors", data: { turbo_frame: "modal" }, onclick: "event.stopPropagation()" %>
             </td>
           </tr>
         <% end %>

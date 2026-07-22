@@ -1,0 +1,125 @@
+<% is_commodity = %w[seed oil_cake wanda].include?(product.category.to_s) %>
+
+<div class="border-t border-blue-100 bg-blue-50/40 px-6 py-5">
+
+  <!-- Product Header -->
+  <div class="flex items-start justify-between mb-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <h3 class="text-base font-bold text-gray-900"><%= product.name %></h3>
+        <% if product.slug.present? %>
+          <span class="text-sm px-2 py-0.5 bg-slate-100 text-slate-700 rounded"
+                dir="rtl" style="font-family: 'Noto Nastaliq Urdu', serif;">
+            <%= product.slug %>
+          </span>
+        <% end %>
+        <span class="text-xs px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full font-semibold uppercase">
+          <%= product.category.humanize %>
+        </span>
+      </div>
+      <p class="text-xs text-gray-400 font-mono mt-0.5">SKU: <%= product.sku.presence || "—" %></p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <%= link_to "Add Batch", new_product_product_batch_path(product),
+            class: "px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors",
+            data: { turbo_frame: "modal" } %>
+      <button type="button"
+              onclick="document.getElementById('supplier-product-<%= product.id %>').innerHTML = ''; window.openProductId = null;"
+              class="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- Batches Table -->
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase">Batch #</th>
+          <th class="px-4 py-2.5 text-right text-xs font-bold text-gray-500 uppercase">Initial Qty</th>
+          <th class="px-4 py-2.5 text-right text-xs font-bold text-gray-500 uppercase">On Hand</th>
+          <th class="px-4 py-2.5 text-right text-xs font-bold text-gray-500 uppercase">Price/Unit</th>
+          <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase">Mfg Date</th>
+          <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase">Expiry</th>
+          <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase">Status</th>
+          <th class="px-4 py-2.5 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% product_batches.each do |batch| %>
+          <% days_left = batch.expiry_date ? (batch.expiry_date - Date.current).to_i : nil %>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 font-mono text-gray-700 font-semibold">
+              <%= batch.batch_number.presence || "—" %>
+            </td>
+            <td class="px-4 py-3 text-right text-gray-600">
+              <% if is_commodity %>
+                <% m = (batch.initial_quantity / 40).to_i %>
+                <% k = (batch.initial_quantity % 40).round(2) %>
+                <%= m %>M <%= k %>KG
+              <% else %>
+                <%= batch.initial_quantity.to_i %> bags
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-right font-semibold <%= batch.quantity_on_hand.zero? ? 'text-red-500' : 'text-gray-900' %>">
+              <% if is_commodity %>
+                <% m = (batch.quantity_on_hand / 40).to_i %>
+                <% k = (batch.quantity_on_hand % 40).round(2) %>
+                <%= m %>M <%= k %>KG
+              <% else %>
+                <%= batch.quantity_on_hand.to_i %> bags
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-right text-gray-600 font-mono">
+              Rs. <%= number_with_delimiter(batch.purchase_price_per_unit.round(2)) %>
+            </td>
+            <td class="px-4 py-3 text-center text-gray-500 text-xs">
+              <%= batch.manufacture_date&.strftime("%d %b %Y") || "—" %>
+            </td>
+            <td class="px-4 py-3 text-center text-xs">
+              <% if batch.expiry_date %>
+                <span class="<%= days_left && days_left <= 7 ? 'text-red-600 font-bold' : days_left && days_left <= 30 ? 'text-amber-600 font-semibold' : 'text-gray-500' %>">
+                  <%= batch.expiry_date.strftime("%d %b %Y") %>
+                  <% if days_left %>
+                    <span class="block text-[10px]">
+                      <%= days_left < 0 ? "#{days_left.abs}d ago" : "#{days_left}d left" %>
+                    </span>
+                  <% end %>
+                </span>
+              <% else %>
+                <span class="text-gray-300">—</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-center">
+              <% if batch.quantity_on_hand.zero? %>
+                <span class="inline-flex px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-500 uppercase">Empty</span>
+              <% elsif batch.expiry_date && batch.expiry_date < Date.current %>
+                <span class="inline-flex px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700 uppercase">Expired</span>
+              <% else %>
+                <span class="inline-flex px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700 uppercase">Active</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to "Edit", edit_product_product_batch_path(product, batch),
+                    class: "text-xs text-indigo-600 hover:text-indigo-900 font-semibold",
+                    data: { turbo_frame: "modal" } %>
+            </td>
+          </tr>
+        <% end %>
+
+        <% if product_batches.empty? %>
+          <tr>
+            <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-400">
+              No batches recorded yet.
+              <%= link_to "Add first batch", new_product_product_batch_path(product),
+                    class: "text-indigo-600 hover:underline font-medium",
+                    data: { turbo_frame: "modal" } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

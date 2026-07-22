@@ -69,7 +69,7 @@
         </button>
 
         <div data-dropdown="inventory"
-             class="absolute top-full left-0 mt-1.5 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden <%= 'open' if inventory_active %>"
+             class="absolute top-full left-0 mt-1.5 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
              style="display: none;">
           <%= link_to products_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(products_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
             Products

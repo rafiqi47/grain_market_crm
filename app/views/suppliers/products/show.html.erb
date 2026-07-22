@@ -1,0 +1,6 @@
+<%= turbo_frame_tag "supplier-product-#{@product.id}" do %>
+  <%= render "suppliers/products/show_content",
+        product: @product,
+        product_batches: @product_batches,
+        supplier: @supplier %>
+<% end %>

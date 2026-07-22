@@ -1,0 +1,218 @@
+<%# Supplier quick-add product URL for the modal controller %>
+<% quick_create_url = quick_create_supplier_products_path(@supplier) %>
+
+<div data-controller="purchase-form product-modal"
+     data-product-modal-url-value="<%= quick_create_url %>">
+
+  <!-- Page Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <%= link_to "← Back to #{@supplier.name.titleize}", supplier_path(@supplier), class: "text-xs font-semibold text-indigo-600 hover:text-indigo-800" %>
+      <h1 class="text-2xl font-bold text-gray-900 mt-1">Record Purchase</h1>
+      <p class="text-xs text-gray-500 mt-0.5">Add multiple products in one go — inventory and ledger update automatically.</p>
+    </div>
+  </div>
+
+  <% if flash[:alert] %>
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 mb-6 text-sm">
+      <%= flash[:alert] %>
+    </div>
+  <% end %>
+
+  <%= form_with url: supplier_purchases_path(@supplier), method: :post, local: true do |f| %>
+
+    <!-- Purchase Meta -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6 mb-4">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Purchase Details</p>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Invoice Number <span class="text-gray-400 font-normal">(optional)</span></label>
+          <input type="text" name="invoice_number" placeholder="e.g. INV-2026-001"
+                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Transaction Date</label>
+          <input type="date" name="transaction_date" value="<%= Date.current %>"
+                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+        </div>
+      </div>
+    </div>
+
+    <!-- Line Items -->
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-bold text-gray-900">Line Items</h2>
+          <p class="text-xs text-gray-500 mt-0.5">Add one row per product purchased.</p>
+        </div>
+        <button type="button"
+                data-action="click->purchase-form#addRow"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-md hover:bg-gray-700 transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+          </svg>
+          Add Item
+        </button>
+      </div>
+
+      <!-- Items Container -->
+      <div data-purchase-form-target="itemsContainer" class="divide-y divide-gray-100">
+        <% if @submitted_items.any? %>
+          <% @submitted_items.each_with_index do |item, idx| %>
+            <%= render "suppliers/purchases/item_row",
+                  index: idx,
+                  products: @products,
+                  supplier: @supplier,
+                  submitted_item: item %>
+          <% end %>
+        <% else %>
+          <%= render "suppliers/purchases/item_row", index: 0, products: @products, supplier: @supplier, submitted_item: nil %>
+        <% end %>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-items" class="hidden px-6 py-10 text-center text-sm text-gray-400">
+        No items added yet. Click "Add Item" to begin.
+      </div>
+    </div>
+
+    <!-- Summary & Payment -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Payment Summary</p>
+
+      <div class="space-y-3">
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-500">Total Amount</span>
+          <span class="font-bold text-gray-900 text-lg"
+                data-purchase-form-target="totalAmount">Rs. 0.00</span>
+        </div>
+
+        <div class="flex items-center justify-between text-sm">
+          <label class="text-gray-500">Amount Paid <span class="text-xs text-gray-400">(cash to delivery person)</span></label>
+          <input type="number"
+                 name="amount_paid"
+                 min="0"
+                 step="0.01"
+                 value="<%= params[:amount_paid] || 0 %>"
+                 placeholder="0.00"
+                 data-purchase-form-target="amountPaid"
+                 data-action="input->purchase-form#updateCredit"
+                 class="w-40 rounded-md border-gray-300 shadow-sm text-sm text-right">
+        </div>
+
+        <div class="border-t border-gray-100 pt-3 flex items-center justify-between text-sm">
+          <span class="font-semibold text-gray-700">Amount on Credit</span>
+          <span class="font-bold text-lg text-red-600"
+                data-purchase-form-target="amountOnCredit">Rs. 0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="flex items-center justify-end gap-3">
+      <%= link_to "Cancel", supplier_path(@supplier),
+            class: "px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
+      <button type="submit"
+              data-purchase-form-target="submitBtn"
+              class="px-6 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-md shadow transition-colors">
+        Record Purchase
+      </button>
+    </div>
+
+  <% end %>
+
+  <!-- Item Row Template (inert — used by JS to clone new rows) -->
+  <template data-purchase-form-target="itemTemplate">
+    <%= render "suppliers/purchases/item_row", index: "INDEX", products: @products, supplier: @supplier, submitted_item: nil %>
+  </template>
+
+  <!-- Quick Add Product Modal -->
+  <div data-product-modal-target="modal"
+       data-action="click->product-modal#backdropClick"
+       class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
+
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden">
+
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-gray-900">Add New Product</h3>
+          <p class="text-xs text-gray-500 mt-0.5">This product will be linked to <%= @supplier.name.titleize %>.</p>
+        </div>
+        <button type="button"
+                data-action="click->product-modal#close"
+                class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Error Box -->
+      <div class="error-box hidden px-6 pt-4">
+        <div class="bg-red-50 border border-red-200 rounded-md p-3">
+          <p class="text-xs font-semibold text-red-700 mb-1">Please fix the following:</p>
+          <ul class="text-xs text-red-600 list-disc list-inside space-y-0.5"
+              data-product-modal-target="errors"></ul>
+        </div>
+      </div>
+
+      <!-- Modal Form -->
+      <form data-product-modal-target="form"
+            data-action="submit->product-modal#submit"
+            class="p-6 space-y-4">
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Product Name <span class="text-red-500">*</span></label>
+          <input type="text" name="product[name]" required
+                 placeholder="e.g. DAP Fertilizer"
+                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+        </div>
+
+        <div data-controller="urdu-keyboard">
+          <label class="block text-xs font-semibold text-gray-700 mb-1">اردو نام <span class="text-red-500">*</span></label>
+          <input type="text" name="product[slug]" required
+                 dir="rtl"
+                 placeholder="یہاں اردو نام لکھیں"
+                 style="font-family: 'Noto Nastaliq Urdu', serif; font-size: 16px;"
+                 data-urdu-keyboard-target="input"
+                 data-action="focus->urdu-keyboard#focusField blur->urdu-keyboard#blurField"
+                 class="w-full rounded-md border-gray-300 shadow-sm text-sm text-right">
+          <div data-urdu-keyboard-target="keyboard"></div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Category <span class="text-red-500">*</span></label>
+          <select name="product[category]" required
+                  class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="">— Select category —</option>
+            <% Product.categories.keys.each do |cat| %>
+              <option value="<%= cat %>"><%= cat.humanize %></option>
+            <% end %>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Reorder Threshold</label>
+          <input type="number" name="product[reorder_threshold]" value="5" min="0"
+                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button"
+                  data-action="click->product-modal#close"
+                  class="flex-1 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            Cancel
+          </button>
+          <button type="submit"
+                  data-product-modal-target="submitBtn"
+                  class="flex-1 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors">
+            Add Product
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
