@@ -8,9 +8,7 @@
     <%= link_to "Register Supplier", new_supplier_path, class: "px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded shadow hover:bg-indigo-700 transition-colors", data: { turbo_frame: "modal" } %>
   </div>
 
-  <div id="suppliers_directory_table">
-    <%= render "table", suppliers: @suppliers %>
-  </div>
+  <%= render "table", suppliers: @suppliers %>
 </div>
 
 <%= turbo_frame_tag "modal" %>

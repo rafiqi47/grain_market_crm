@@ -1,12 +1,14 @@
-<!-- app/views/suppliers/edit.html.erb -->
 <%= turbo_frame_tag "modal" do %>
   <div class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-200">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-gray-900">Edit Supplier Details</h3>
-        <%= link_to "×", suppliers_path, class: "text-gray-400 hover:text-gray-600 text-2xl font-semibold", data: { turbo_frame: "_top" } %>
+        <button type="button"
+                onclick="this.closest('turbo-frame').src=''; this.closest('turbo-frame').innerHTML=''"
+                class="text-gray-400 hover:text-gray-600 text-2xl font-semibold">
+          ×
+        </button>
       </div>
-
       <%= render "form", supplier: @supplier %>
     </div>
   </div>

@@ -37,18 +37,21 @@ class SuppliersController < ApplicationController
   end
 
   def edit
-    # Rendered inline inside the dynamic modal frame
   end
 
   def update
     if @supplier.update(supplier_params)
       respond_to do |format|
-        flash.now[:notice] = "Supplier data updated successfully!"
-        format.turbo_stream
+        format.turbo_stream do
+          flash.now[:notice] = "Supplier data updated successfully!"
+        end
         format.html { redirect_to suppliers_path, notice: "Supplier data updated successfully!" }
       end
     else
-      render :edit, status: :unprocessable_entity
+      respond_to do |format|
+        format.turbo_stream { render :edit, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_entity }
+      end
     end
   end
 

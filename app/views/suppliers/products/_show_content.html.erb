@@ -21,6 +21,9 @@
     </div>
 
     <div class="flex items-center gap-2">
+      <%= link_to "Edit Product", edit_supplier_product_path(supplier, product),
+            class: "px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors",
+            data: { turbo_frame: "modal" } %>
       <%= link_to "Add Batch", new_product_product_batch_path(product),
             class: "px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors",
             data: { turbo_frame: "modal" } %>
