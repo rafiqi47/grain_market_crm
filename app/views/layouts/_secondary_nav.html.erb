@@ -5,7 +5,7 @@
   end
 
   # Which group is currently active (to highlight the group button)
-  inventory_active  = nav_active?([products_path, suppliers_path, inventory_adjustments_path, crops_path])
+  inventory_active  = nav_active?([suppliers_path, inventory_adjustments_path, crops_path])
   sales_active      = nav_active?([sales_orders_path, profits_path])
   farmers_active    = nav_active?([farmers_path])
   partners_active   = nav_active?([trading_partners_path])
@@ -71,9 +71,6 @@
         <div data-dropdown="inventory"
              class="absolute top-full left-0 mt-1.5 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
              style="display: none;">
-          <%= link_to products_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(products_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
-            Products
-          <% end %>
           <%= link_to suppliers_path, class: "flex items-center px-4 py-2.5 text-sm #{request.path.start_with?(suppliers_path) ? 'bg-gray-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}" do %>
             Suppliers
           <% end %>

@@ -69,7 +69,7 @@ Rails.application.routes.draw do
     resources :crop_sales, only: [:new, :create], controller: "trading_partners/crop_sales"
   end
 
-  resources :products do
+  resources :products, only: [] do
     resources :product_batches, only: [:new, :create, :edit, :update, :destroy]
   end
 

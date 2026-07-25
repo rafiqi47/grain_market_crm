@@ -1,8 +1,0 @@
-<!-- app/views/products/create.turbo_stream.erb & update.turbo_stream.erb -->
-<%= turbo_stream.replace "modal", turbo_frame_tag("modal") %>
-<%= turbo_stream.replace "flash-container", render(partial: "layouts/flash") %>
-
-<%# Using .update injects the partial cleanly into the permanent DOM shell %>
-<%= turbo_stream.update "products_catalog_table" do %>
-  <%= render "table", products: current_user.organization.products.includes(:supplier).order(name: :asc) %>
-<% end %>
