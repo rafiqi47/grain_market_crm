@@ -14,10 +14,8 @@
             supplier: @product.supplier %>
     <% end %>
   <% end %>
-<% end %>
 
-<% if @product.supplier_id.present? %>
-  <%= turbo_stream.replace "supplier-balance-#{@product.supplier.id}" do %>
+  <%= turbo_stream.replace "supplier_balance_card" do %>
     <%= render "suppliers/balance_card", supplier: @product.supplier.reload %>
   <% end %>
 <% end %>

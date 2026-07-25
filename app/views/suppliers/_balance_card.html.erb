@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "supplier-balance-#{supplier.id}" do %>
+<%= turbo_frame_tag "supplier_balance_card" do %>
   <div class="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-right">
     <span class="block text-[10px] font-bold text-gray-400 uppercase">Current Balance</span>
     <span class="text-xl font-black font-mono <%= supplier.current_balance > 0 ? 'text-red-600' : 'text-emerald-700' %>">
