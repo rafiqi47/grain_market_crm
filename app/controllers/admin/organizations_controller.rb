@@ -34,6 +34,10 @@ module Admin
       end
     end
 
+    def update
+      Organization.find(params[:id]).send_reset_password_instructions
+    end
+
     private
 
     def organization_params

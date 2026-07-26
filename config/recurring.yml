@@ -9,11 +9,13 @@
 #     priority: 2
 #     schedule: at 5am every day
 
+alert_task:
+  class: InventoryExpiryScanJob
+  schedule: "0 0 * * *"          # Runs every day at midnight
+  time_zone: "Asia/Karachi"      # PKT (UTC+5)
+  queue: default
+
 production:
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
-
-  inventory_expiry_scan:
-    class: InventoryExpiryScanJob
-    schedule: every 1.day at 00:00

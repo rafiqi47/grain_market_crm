@@ -31,7 +31,9 @@
       AND they are NOT looking at the public home/landing page.
     %>
     <% if user_signed_in? && !(controller_name == 'home' && action_name == 'index') %>
-      <%= render "layouts/secondary_nav" %>
+      <% if !current_user.super_admin? %>
+        <%= render "layouts/secondary_nav" %>
+      <% end %>
       <main class="flex-grow min-h-0 overflow-y-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <%= yield %>

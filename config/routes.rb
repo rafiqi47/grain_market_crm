@@ -15,12 +15,16 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
 
+  authenticate :user, ->(user) { user.super_admin? } do
+    mount MissionControl::Jobs::Engine, at: "/admin/jobs"
+  end
+
   # Admin Namespace
   namespace :admin do
     root to: "dashboard#index"
 
     resources :organizations do
-      resources :users, only: [:new, :create, :index] do
+      resources :users, only: [:new, :create, :index, :update] do
         member do
           patch :toggle_subscription
         end

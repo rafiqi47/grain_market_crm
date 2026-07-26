@@ -23,7 +23,7 @@ class Product < ApplicationRecord
   validates :category, presence: true
   validates :sku, uniqueness: { scope: :organization_id }, allow_blank: true
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
-  validates :slug, presence: true, uniqueness: { scope: :organization_id }
+  validates :slug, presence: true
 
   # Scopes
   scope :low_stock, -> {
