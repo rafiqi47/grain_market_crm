@@ -4,8 +4,8 @@ module Sales
 
     def initialize(organization:, order_params:, items_params:, existing_order: nil)
       @organization = organization
-      @order_params = order_params   
-      @items_params = items_params   
+      @order_params = order_params
+      @items_params = items_params
       @existing_order = existing_order
       @errors = []
     end
@@ -15,7 +15,7 @@ module Sales
         # Use existing order for updates, or create a new one
         sales_order = @existing_order || @organization.sales_orders.new
         sales_order.assign_attributes(@order_params)
-        
+
         running_revenue = 0.0
         running_cost = 0.0
 
@@ -35,7 +35,7 @@ module Sales
           else
             available_batches = @organization.product_batches.lock.active.where(product_id: product.id).order(expiry_date: :asc).to_a
             total_available = available_batches.sum(&:quantity_on_hand)
-            
+
             if total_available < requested_qty
               raise StandardError, "Insufficient total stock for #{product.name}."
             end

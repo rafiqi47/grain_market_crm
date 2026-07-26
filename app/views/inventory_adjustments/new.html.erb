@@ -1,80 +1,223 @@
-<div class="max-w-3xl mx-auto my-8 px-4 sm:px-6">
-  <div class="md:flex md:items-center md:justify-between mb-8 border-b border-gray-200 pb-5">
-    <div class="flex-1 min-w-0">
-      <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate tracking-tight">
-        Log Stock Adjustment Event
-      </h2>
-      <p class="mt-1 text-sm text-gray-500">
-        Manually adjust ledger entries for specific physical lot allocations to track anomalies, spoilage, or balancing adjustments.
-      </p>
-    </div>
+<%
+  sel_supplier     = params[:supplier_id].to_s
+  sel_product      = params[:product_id].to_s
+  sel_batch        = params[:product_batch_id].to_s
+  sel_reason       = params[:reason].to_s
+  sel_cust_type    = params[:customer_type].to_s
+  sel_direction    = params[:direction].to_s
+%>
+
+<div class="max-w-2xl mx-auto py-8"
+     data-controller="adjustment-form"
+     data-adjustment-form-selected-supplier-id-value="<%= sel_supplier %>"
+     data-adjustment-form-selected-product-id-value="<%= sel_product %>"
+     data-adjustment-form-selected-batch-id-value="<%= sel_batch %>"
+     data-adjustment-form-selected-reason-value="<%= sel_reason %>"
+     data-adjustment-form-selected-customer-type-value="<%= sel_cust_type %>">
+
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">New Inventory Adjustment</h1>
+    <p class="text-xs text-gray-500 mt-1">Adjust stock levels and automatically update relevant ledgers.</p>
   </div>
 
-  <%= form_with url: inventory_adjustments_path, method: :post, local: true, class: "space-y-8" do |f| %>
-    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
-      <div class="px-4 py-6 sm:p-8 space-y-6">
-        
-        <div>
-          <label for="product_batch_id" class="block text-sm font-semibold leading-6 text-gray-900">Select Target Inventory Lot</label>
-          <div class="mt-2">
-            <select name="product_batch_id" id="product_batch_id" required class="block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 transition bg-white">
-              <option value="">-- Select Product Batch --</option>
-              <% @batches.each do |batch| %>
-                <option value="<%= batch.id %>">
-                  <%= batch.product.name %> (Lot: <%= batch.batch_number %>) — Available Qty: <%= batch.quantity_on_hand %>
-                </option>
-              <% end %>
-            </select>
-          </div>
-        </div>
-
-        <div class="rounded-xl bg-amber-50 p-4 ring-1 ring-inset ring-amber-600/10">
-          <div class="flex items-start gap-x-3">
-            <svg class="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-            <div>
-              <h3 class="text-xs font-bold text-amber-800 tracking-wide uppercase">Delta Entry Protocol</h3>
-              <p class="mt-1 text-sm leading-5 text-amber-700">
-                Ledger logic calculates totals explicitly from changes. Input a negative value (<span class="font-mono bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-bold">-2</span>) to deduct stock for shrinkage, damage, or returns. Use a positive number to add back inventory.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
-          <div class="sm:col-span-3">
-            <label for="reason" class="block text-sm font-semibold leading-6 text-gray-900">Adjustment Event Reason</label>
-            <div class="mt-2">
-              <select name="reason" id="reason" required class="block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 transition bg-white">
-                <option value="">-- Select Reason --</option>
-                <% InventoryAdjustment.adjustment_reasons.keys.each do |key| %>
-                  <option value="<%= key %>"><%= key.humanize %></option>
-                <% end %>
-              </select>
-            </div>
-          </div>
-
-          <div class="sm:col-span-3">
-            <label for="quantity_changed" class="block text-sm font-semibold leading-6 text-gray-900">Quantity Change (Delta)</label>
-            <div class="mt-2">
-              <%= f.number_field :quantity_changed, required: true, id: "quantity_changed", placeholder: "e.g., -5 or 12", class: "block w-full rounded-lg border-0 p-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 transition" %>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label for="notes" class="block text-sm font-semibold leading-6 text-gray-900">Audit Notes / Explanatory Justification</label>
-          <div class="mt-2">
-            <%= f.text_area :notes, required: true, id: "notes", rows: 4, placeholder: "Describe exactly why this physical inventory reconciliation is occurring...", class: "block w-full rounded-lg border-0 p-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6 transition" %>
-          </div>
-        </div>
-
-      </div>
+  <% if flash[:alert] %>
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 mb-6 text-sm">
+      <%= flash[:alert] %>
     </div>
+  <% end %>
 
-    <div class="flex items-center justify-end gap-x-4 border-t border-gray-900/10 pt-6">
-      <%= f.submit "Commit Ledger Adjustment", class: "rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-all cursor-pointer" %>
+  <%= form_with url: inventory_adjustments_path, method: :post do %>
+
+    <div class="space-y-5 bg-white border border-gray-200 rounded-lg p-6">
+
+      <!-- Supplier -->
+      <div>
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">1. Select Supplier</label>
+        <select name="supplier_id"
+                data-adjustment-form-target="supplierSelect"
+                data-action="change->adjustment-form#supplierChanged"
+                class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+          <option value="">— Select supplier —</option>
+          <% @suppliers.each do |s| %>
+            <option value="<%= s.id %>" <%= "selected" if s.id.to_s == sel_supplier %>>
+              <%= s.name.titleize %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+
+      <!-- Product (populated via JS, shown if previously selected) -->
+      <div data-adjustment-form-target="productWrapper"
+           class="<%= sel_product.present? ? '' : 'hidden' %>">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">2. Select Product</label>
+        <select name="product_id"
+                data-adjustment-form-target="productSelect"
+                data-action="change->adjustment-form#productChanged"
+                class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+          <option value="">— Select product —</option>
+        </select>
+      </div>
+
+      <!-- Batch (populated via JS) -->
+      <div data-adjustment-form-target="batchWrapper"
+           class="<%= sel_batch.present? ? '' : 'hidden' %>">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">3. Select Batch</label>
+        <select name="product_batch_id"
+                data-adjustment-form-target="batchSelect"
+                data-action="change->adjustment-form#batchChanged"
+                class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+          <option value="">— Select batch —</option>
+        </select>
+      </div>
+
+      <!-- Quantity -->
+      <div data-adjustment-form-target="quantityWrapper"
+           class="<%= sel_batch.present? ? '' : 'hidden' %>">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1"
+               data-adjustment-form-target="directionLabel">Quantity</label>
+
+        <div data-adjustment-form-target="unitsField">
+          <input type="number" name="quantity" min="0.01" step="0.01"
+                 value="<%= params[:quantity] %>"
+                 data-adjustment-form-target="quantityField"
+                 placeholder="Enter quantity"
+                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+        </div>
+
+        <div data-adjustment-form-target="maundKgFields" class="hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Maund</label>
+              <input type="number" name="quantity_maund" min="0" step="1"
+                     value="<%= params[:quantity_maund] %>"
+                     data-adjustment-form-target="maundField"
+                     class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">KG</label>
+              <input type="number" name="quantity_kg" min="0" max="39.99" step="0.01"
+                     value="<%= params[:quantity_kg] %>"
+                     data-adjustment-form-target="kgField"
+                     class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reason -->
+      <div>
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Reason</label>
+        <select name="reason"
+                data-adjustment-form-target="reasonSelect"
+                data-action="change->adjustment-form#reasonChanged"
+                class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+          <option value="">— Select reason —</option>
+          <option value="damaged_goods"        <%= "selected" if sel_reason == "damaged_goods" %>>Damaged Goods (deduct)</option>
+          <option value="spillage_or_leakage"  <%= "selected" if sel_reason == "spillage_or_leakage" %>>Spillage / Leakage (deduct)</option>
+          <option value="supplier_return"      <%= "selected" if sel_reason == "supplier_return" %>>Supplier Return (deduct + adjust supplier ledger)</option>
+          <option value="customer_return"      <%= "selected" if sel_reason == "customer_return" %>>Customer Return (add back + adjust ledger)</option>
+          <option value="audit_correction"     <%= "selected" if sel_reason == "audit_correction" %>>Audit Correction (manual direction)</option>
+        </select>
+      </div>
+
+      <!-- Audit correction direction -->
+      <div data-adjustment-form-target="directionWrapper"
+           class="<%= sel_reason == 'audit_correction' ? '' : 'hidden' %>">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Direction</label>
+        <select name="direction" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+          <option value="add"    <%= "selected" if sel_direction == "add" %>>Add to inventory (+)</option>
+          <option value="deduct" <%= "selected" if sel_direction == "deduct" %>>Deduct from inventory (−)</option>
+        </select>
+      </div>
+
+      <!-- Customer Return -->
+      <div data-adjustment-form-target="customerReturnWrapper"
+           class="<%= sel_reason == 'customer_return' ? '' : 'hidden' %> space-y-4 bg-blue-50 border border-blue-100 rounded-md p-4">
+        <p class="text-xs font-bold text-blue-700 uppercase">Customer Return Details</p>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Return Value (Rs.)</label>
+          <input type="number" name="return_value" min="0" step="0.01"
+                 value="<%= params[:return_value] %>"
+                 placeholder="Amount to credit back to customer"
+                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Customer Type</label>
+          <select name="customer_type"
+                  data-adjustment-form-target="customerTypeSelect"
+                  data-action="change->adjustment-form#customerTypeChanged"
+                  class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="">— Walk-in / No ledger adjustment —</option>
+            <option value="farmer"          <%= "selected" if sel_cust_type == "farmer" %>>Farmer (adjust Khata)</option>
+            <option value="trading_partner" <%= "selected" if sel_cust_type == "trading_partner" %>>Trading Partner (adjust ledger)</option>
+          </select>
+        </div>
+
+        <div data-adjustment-form-target="farmerWrapper"
+             class="<%= sel_cust_type == 'farmer' ? '' : 'hidden' %>">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Select Farmer</label>
+          <select name="farmer_id"
+                  data-adjustment-form-target="farmerSelect"
+                  class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="">— Select farmer —</option>
+            <% @farmers.each do |farmer| %>
+              <option value="<%= farmer.id %>" <%= "selected" if params[:farmer_id].to_s == farmer.id.to_s %>>
+                <%= farmer.full_name %><%= " / #{farmer.urdu_name}" if farmer.urdu_name.present? %>
+                — Rs. <%= number_with_delimiter(farmer.current_balance.abs.round(2)) %>
+              </option>
+            <% end %>
+          </select>
+        </div>
+
+        <div data-adjustment-form-target="tradingPartnerWrapper"
+             class="<%= sel_cust_type == 'trading_partner' ? '' : 'hidden' %>">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Select Trading Partner</label>
+          <select name="trading_partner_id"
+                  data-adjustment-form-target="tradingPartnerSelect"
+                  class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="">— Select trading partner —</option>
+            <% @trading_partners.each do |partner| %>
+              <option value="<%= partner.id %>" <%= "selected" if params[:trading_partner_id].to_s == partner.id.to_s %>>
+                <%= partner.business_name.titleize %><%= " / #{partner.urdu_name}" if partner.urdu_name.present? %>
+              </option>
+            <% end %>
+          </select>
+        </div>
+      </div>
+
+      <!-- Supplier Return -->
+      <div data-adjustment-form-target="supplierReturnWrapper"
+           class="<%= sel_reason == 'supplier_return' ? '' : 'hidden' %> space-y-3 bg-amber-50 border border-amber-100 rounded-md p-4">
+        <p class="text-xs font-bold text-amber-700 uppercase">Supplier Return Details</p>
+        <p class="text-xs text-amber-600">Supplier is auto-detected from the selected batch. Stock will be deducted and a payment will be posted to their ledger.</p>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Return Amount (Rs.)</label>
+          <input type="number" name="supplier_return_amount" min="0" step="0.01"
+                 value="<%= params[:supplier_return_amount] %>"
+                 placeholder="Amount to deduct from supplier balance"
+                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Notes</label>
+        <textarea name="notes" rows="2"
+                  placeholder="Additional notes"
+                  class="w-full rounded-md border-gray-300 shadow-sm text-sm"><%= params[:notes] %></textarea>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <%= link_to "Cancel", inventory_adjustments_path,
+              class: "flex-1 text-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
+        <button type="submit"
+                class="flex-1 px-4 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-gray-700 rounded-md transition-colors">
+          Record Adjustment
+        </button>
+      </div>
+
     </div>
   <% end %>
 </div>

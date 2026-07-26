@@ -55,6 +55,17 @@ class SuppliersController < ApplicationController
     end
   end
 
+  def products_for_adjustment
+    @supplier = current_user.organization.suppliers.find(params[:id])
+    products  = @supplier.products.order(:name)
+
+    render json: {
+      products: products.map do |p|
+        { id: p.id, name: p.name, urdu_slug: p.slug, category: p.category }
+      end
+    }
+  end
+
   private
 
   def set_supplier

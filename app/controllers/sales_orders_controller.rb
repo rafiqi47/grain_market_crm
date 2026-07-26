@@ -105,6 +105,8 @@ class SalesOrdersController < ApplicationController
       @sales_order.sales_line_items.each do |item|
         item.product_batch.increment!(:quantity_on_hand, item.quantity)
       end
+
+      current_user.organization.khata_transactions.find_by(sourceable: @sales_order)&.destroy
       @sales_order.destroy
     end
 

@@ -1,42 +1,81 @@
-<div class="p-6">
+<div class="max-w-6xl mx-auto py-8">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-black text-gray-900">Inventory Ledger</h1>
-    <%= link_to "New Adjustment", new_inventory_adjustment_path, class: "bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition" %>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Inventory Adjustments</h1>
+      <p class="text-xs text-gray-500 mt-1">Full audit log of all stock level changes.</p>
+    </div>
+    <%= link_to "New Adjustment", new_inventory_adjustment_path,
+          class: "bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-700 transition" %>
   </div>
 
-  <% if @unread_alerts.any? %>
-    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-      <p class="text-sm text-yellow-700"><strong>Alerts:</strong> You have <%= @unread_alerts.count %> pending inventory issues requiring attention.</p>
-    </div>
-  <% end %>
-
-  <div class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
-    <table class="min-w-full divide-y divide-gray-200">
+  <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
       <thead class="bg-gray-50">
         <tr>
+          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Date</th>
           <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Product</th>
           <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Batch</th>
-          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Change</th>
+          <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Change</th>
           <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Reason</th>
-          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">User</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">By</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Notes</th>
+          <th class="px-6 py-3"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-200">
+      <tbody class="divide-y divide-gray-100">
         <% @adjustments.each do |adj| %>
+          <% batch      = adj.product_batch %>
+          <% product    = batch.product %>
+          <% is_commodity = %w[seed oil_cake wanda].include?(product.category.to_s) %>
           <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900"><%= adj.product_batch.product.name %></td>
-            <td class="px-6 py-4 text-sm text-gray-500"><%= adj.product_batch.batch_number %></td>
-            <td class="px-6 py-4 text-sm font-bold <%= adj.quantity_changed.positive? ? 'text-green-600' : 'text-red-600' %>">
-              <%= adj.quantity_changed.positive? ? "+" : "" %><%= adj.quantity_changed %>
+            <td class="px-6 py-3 text-xs text-gray-500 whitespace-nowrap">
+              <%= adj.created_at.strftime("%d %b %Y") %>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-500"><%= adj.adjustment_reason.humanize %></td>
-            <td class="px-6 py-4 text-sm text-gray-500"><%= adj.user.email %></td>
-            <td class="px-6 py-4 text-sm">
-              <%= link_to "Edit", edit_inventory_adjustment_path(adj), class: "text-blue-600 hover:text-blue-900 mr-4" %>
-              <%= button_to "Reverse", reverse_inventory_adjustment_path(adj), 
-                  method: :post,
-                  data: { confirm: "Are you sure? This will create an opposing adjustment." },
-                  class: "text-red-600 hover:text-red-900 font-semibold" %>
+            <td class="px-6 py-3">
+              <span class="font-semibold text-gray-900"><%= product.name %></span>
+              <% if product.slug.present? %>
+                <span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded"
+                      dir="rtl" style="font-family: 'Noto Nastaliq Urdu', serif;">
+                  <%= product.slug %>
+                </span>
+              <% end %>
+            </td>
+            <td class="px-6 py-3 text-xs font-mono text-gray-500">
+              <%= batch.batch_number.presence || "—" %>
+            </td>
+            <td class="px-6 py-3 text-right font-bold whitespace-nowrap
+                       <%= adj.quantity_changed.positive? ? 'text-green-600' : 'text-red-600' %>">
+              <% if is_commodity %>
+                <% qty = adj.quantity_changed.abs %>
+                <% m = (qty / 40).to_i %>
+                <% k = (qty % 40).round(2) %>
+                <%= adj.quantity_changed.positive? ? "+" : "−" %><%= m %>M <%= k %>KG
+              <% else %>
+                <%= adj.quantity_changed.positive? ? "+" : "−" %><%= adj.quantity_changed.abs.to_i %>
+              <% end %>
+            </td>
+            <td class="px-6 py-3 text-xs text-gray-600">
+              <%= adj.adjustment_reason.humanize %>
+            </td>
+            <td class="px-6 py-3 text-xs text-gray-600">
+              <%= adj.user.full_name %>
+            </td>
+            <td class="px-6 py-3 text-xs text-gray-400 max-w-xs truncate">
+              <%= adj.notes %>
+            </td>
+            <td class="px-6 py-3 text-right text-xs whitespace-nowrap">
+              <%= button_to "Reverse", reverse_inventory_adjustment_path(adj),
+                    method: :post,
+                    data: { turbo_confirm: "Reverse this adjustment? An opposing entry will be created." },
+                    class: "text-red-600 hover:text-red-900 font-semibold bg-transparent border-0 p-0 cursor-pointer" %>
+            </td>
+          </tr>
+        <% end %>
+
+        <% if @adjustments.empty? %>
+          <tr>
+            <td colspan="8" class="px-6 py-10 text-center text-sm text-gray-400">
+              No adjustments recorded yet.
             </td>
           </tr>
         <% end %>

@@ -34,11 +34,17 @@ Rails.application.routes.draw do
   get "dashboard", to: "dashboard#index", as: :dashboard
 
   resources :suppliers, only: [:index, :show, :new, :create, :edit, :update] do
+    member do
+      get :products_for_adjustment
+    end
     resources :supplier_ledgers, only: [:new, :create, :edit, :update, :destroy], controller: "suppliers/supplier_ledgers"
     resources :purchases, only: [:new, :create], controller: "suppliers/purchases"
     resources :products, only: [:show, :edit, :update], controller: "suppliers/products" do
       collection do
         post :quick_create
+      end
+      member do
+        get :batches_for_adjustment
       end
     end
   end

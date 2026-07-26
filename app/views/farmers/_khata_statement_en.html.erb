@@ -56,7 +56,7 @@
         <% @active_transactions.each do |txn| %>
           <tr>
             <td class="px-3 py-2 text-gray-500"><%= txn.created_at.strftime("%d %b %Y") %></td>
-            <td class="px-3 py-2 text-gray-700"><%= txn.description %></td>
+            <td class="px-3 py-2 text-gray-700"><%= txn.sourceable.is_a?(SalesOrder) ? txn.sourceable.line_items_summary : txn.description %></td>
             <td class="px-3 py-2 text-right text-green-700"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.credit? %></td>
             <td class="px-3 py-2 text-right text-red-600"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.debit? %></td>
             <td class="px-3 py-2 text-right font-medium text-gray-900">Rs. <%= number_with_delimiter(txn.resulting_balance.round(2)) %></td>
@@ -118,7 +118,7 @@
             <% entry[:transactions].each do |txn| %>
               <tr>
                 <td class="px-3 py-2 text-gray-500"><%= txn.created_at.strftime("%d %b %Y") %></td>
-                <td class="px-3 py-2 text-gray-700"><%= txn.description %></td>
+                <td class="px-3 py-2 text-gray-700"><%= txn.sourceable.is_a?(SalesOrder) ? txn.sourceable.line_items_summary : txn.description %></td>
                 <td class="px-3 py-2 text-right text-green-700"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.credit? %></td>
                 <td class="px-3 py-2 text-right text-red-600"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.debit? %></td>
                 <td class="px-3 py-2 text-right font-medium text-gray-900">Rs. <%= number_with_delimiter(txn.resulting_balance.round(2)) %></td>

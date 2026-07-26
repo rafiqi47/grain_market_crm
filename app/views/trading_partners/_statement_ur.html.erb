@@ -63,7 +63,7 @@
           <% @ledger_entries.each do |entry| %>
             <tr>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; white-space: nowrap;"><%= entry.created_at.strftime("%d %b %Y") %></td>
-              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151;"><%= entry.description %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151;"><%= entry.sourceable.is_a?(SalesOrder) ? entry.sourceable.line_items_summary : entry.description%></td>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #15803d; text-align: left;"><%= "Rs. #{number_with_delimiter(entry.amount.round(2))}" if entry.credit? %></td>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #dc2626; text-align: left;"><%= "Rs. #{number_with_delimiter(entry.amount.round(2))}" if entry.debit? %></td>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #111827; text-align: left;">Rs. <%= number_with_delimiter(entry.resulting_balance.round(2)) %></td>
@@ -147,6 +147,7 @@
         <thead>
           <tr style="background: #f3f4f6;">
             <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">آرڈر نمبر</th>
+            <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">تفصیل</th>
             <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500;">تاریخ</th>
             <th style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; font-weight: 500; text-align: left;">رقم</th>
           </tr>
@@ -155,6 +156,7 @@
           <% @sales_orders.each do |order| %>
             <tr>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151; font-family: monospace;"><%= order.order_number %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151; font-family: monospace;"><%= order.line_items_summary %></td>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280;"><%= order.placed_at.strftime("%d %b %Y") %></td>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #dc2626; font-weight: 600; text-align: left;">Rs. <%= number_with_delimiter(order.total_revenue.round(2)) %></td>
             </tr>
@@ -163,7 +165,7 @@
         <tfoot>
           <tr style="background: #f9fafb;">
             <td colspan="2" style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; color: #374151;">کل فروخت</td>
-            <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; color: #dc2626; text-align: left;">
+            <td colspan="2" style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 700; color: #dc2626; text-align: left;">
               Rs. <%= number_with_delimiter(@sales_orders.sum(&:total_revenue).round(2)) %>
             </td>
           </tr>

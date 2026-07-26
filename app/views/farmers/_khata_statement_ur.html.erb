@@ -69,7 +69,7 @@
           <% @active_transactions.each do |txn| %>
             <tr>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #6b7280; white-space: nowrap;"><%= txn.created_at.strftime("%d %b %Y") %></td>
-              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151;"><%= txn.description %></td>
+              <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #374151;"><%= txn.sourceable.is_a?(SalesOrder) ? txn.sourceable.line_items_summary : txn.description %></td>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #15803d; text-align: left;"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.credit? %></td>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; color: #dc2626; text-align: left;"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.debit? %></td>
               <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #111827; text-align: left;">Rs. <%= number_with_delimiter(txn.resulting_balance.round(2)) %></td>
@@ -131,7 +131,7 @@
               <% entry[:transactions].each do |txn| %>
                 <tr>
                   <td style="padding: 6px 10px; border: 1px solid #e5e7eb; color: #6b7280;"><%= txn.created_at.strftime("%d %b %Y") %></td>
-                  <td style="padding: 6px 10px; border: 1px solid #e5e7eb; color: #374151;"><%= txn.description %></td>
+                  <td style="padding: 6px 10px; border: 1px solid #e5e7eb; color: #374151;"><%= txn.sourceable.is_a?(SalesOrder) ? txn.sourceable.line_items_summary : txn.description %></td>
                   <td style="padding: 6px 10px; border: 1px solid #e5e7eb; color: #15803d; text-align: left;"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.credit? %></td>
                   <td style="padding: 6px 10px; border: 1px solid #e5e7eb; color: #dc2626; text-align: left;"><%= "Rs. #{number_with_delimiter(txn.amount.round(2))}" if txn.debit? %></td>
                   <td style="padding: 6px 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #111827; text-align: left;">Rs. <%= number_with_delimiter(txn.resulting_balance.round(2)) %></td>

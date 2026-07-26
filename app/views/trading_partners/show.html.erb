@@ -1,4 +1,4 @@
-<div class="max-w-3xl mx-auto py-8">
+<div class="mx-auto py-8">
   <div class="flex items-start justify-between mb-6">
     <div>
       <h1 class="text-2xl font-semibold text-gray-900"><%= @trading_partner.business_name.titleize %></h1>
@@ -53,7 +53,7 @@
         <% @ledger_entries.each do |entry| %>
           <tr>
             <td class="px-4 py-2 text-sm text-gray-500"><%= entry.created_at.strftime("%d %b %Y") %></td>
-            <td class="px-4 py-2 text-sm text-gray-700"><%= entry.description %></td>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= entry.sourceable.is_a?(SalesOrder) ? entry.sourceable.line_items_summary : entry.description %></td>
             <td class="px-4 py-2 text-sm text-right text-green-700"><%= "Rs. #{number_with_delimiter(entry.amount.round(2))}" if entry.credit? %></td>
             <td class="px-4 py-2 text-sm text-right text-red-600"><%= "Rs. #{number_with_delimiter(entry.amount.round(2))}" if entry.debit? %></td>
             <td class="px-4 py-2 text-sm text-right font-medium text-gray-900">Rs. <%= number_with_delimiter(entry.resulting_balance.round(2)) %></td>

@@ -14,6 +14,22 @@ class SalesOrder < ApplicationRecord
   validates :placed_at, presence: true
   validate :customer_reference_matches_type
 
+  def line_items_summary
+    sales_line_items.includes(:product).map do |li|
+      product      = li.product
+      is_commodity = %w[seed oil_cake wanda].include?(product.category.to_s)
+
+      if is_commodity
+        total_kg = li.quantity
+        maund    = (total_kg / 40).to_i
+        kg       = (total_kg % 40).round(2)
+        "#{product.name}(#{product.slug}) -  #{maund} Maund #{kg} KG"
+      else
+        "#{product.name}(#{product.slug}) - #{li.quantity.to_i} bags"
+      end
+    end.join(", ")
+  end
+
   private
 
   # Auto-fills customer_name from the associated record so existing
