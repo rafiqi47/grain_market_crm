@@ -34,23 +34,46 @@ module Inventory
     rescue ActiveRecord::RecordInvalid => e
       @errors << e.message
       false
+    rescue StandardError => e
+      @errors << e.message
+      false
     end
 
     private
 
+    # def adjust_via_purchase_order(supplier, new_value, difference)
+    #   po = @batch.purchase_order
+
+    #   new_credit = [po.amount_on_credit + difference, 0].max
+    #   po.update!(
+    #     total_amount:     new_value,
+    #     amount_on_credit: new_credit
+    #   )
+
+    #   ledger_entry = supplier.supplier_ledgers.find_by(purchase_order: po)
+    #   if ledger_entry
+    #     ledger_entry.update_column(:amount, new_value)
+    #   end
+
+    #   supplier.recalculate_ledger_balances!
+    # end
     def adjust_via_purchase_order(supplier, new_value, difference)
       po = @batch.purchase_order
 
-      new_credit = [po.amount_on_credit + difference, 0].max
-      po.update!(
-        total_amount:     new_value,
-        amount_on_credit: new_credit
+      # Cap amount_paid at new_value — can't have paid more than the total
+      new_amount_paid   = [po.amount_paid.to_f, new_value].min.round(2)
+      new_amount_credit = (new_value - new_amount_paid).round(2)
+
+      # update_columns bypasses financials_must_balance validation intentionally
+      # — this is a programmatic correction, not user input
+      po.update_columns(
+        total_amount:     new_value.round(2),
+        amount_paid:      new_amount_paid,
+        amount_on_credit: new_amount_credit
       )
 
       ledger_entry = supplier.supplier_ledgers.find_by(purchase_order: po)
-      if ledger_entry
-        ledger_entry.update_column(:amount, new_value)
-      end
+      ledger_entry&.update_column(:amount, new_value.round(2))
 
       supplier.recalculate_ledger_balances!
     end

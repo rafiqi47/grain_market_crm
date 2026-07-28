@@ -147,12 +147,12 @@
     const freshAddButton = addButton.cloneNode(true);
     addButton.parentNode.replaceChild(freshAddButton, addButton);
 
-    // Dynamic Rails Inventory JSON Mapping 
+    // Dynamic Rails Inventory JSON Mapping
     const inventoryData = {
       <% (@products || []).each do |product| %>
         "<%= product.id %>": [
           <% product.product_batches.active.each do |batch| %>
-            { id: "<%= batch.id %>", label: "Lot: <%= escape_javascript(batch.batch_number) %> [Avail: <%= batch.quantity_on_hand %>]" },
+            { id: "<%= batch.id %>", label: "Lot: <%= escape_javascript(batch.batch_number) %> <%= batch.available_batch_details %>" },
           <% end %>
         ],
       <% end %>

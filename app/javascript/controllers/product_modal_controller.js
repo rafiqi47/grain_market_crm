@@ -7,7 +7,7 @@ export default class extends Controller {
 
   connect() {
     this.currentRowIndex = null
-    this.handleKeydown = this.handleKeydown.bind(this)
+    this.handleKeydown   = this.handleKeydown.bind(this)
     document.addEventListener("keydown", this.handleKeydown)
   }
 
@@ -15,44 +15,34 @@ export default class extends Controller {
     document.removeEventListener("keydown", this.handleKeydown)
   }
 
-  // Open the modal — called from a row's "Add New Product" button
   open(event) {
     event.preventDefault()
-    const btn = event.currentTarget
-    this.currentRowIndex = parseInt(btn.dataset.rowIndex)
-
+    this.currentRowIndex = parseInt(event.currentTarget.dataset.rowIndex)
     this.clearForm()
     this.clearErrors()
     this.modalTarget.classList.remove("hidden")
     this.modalTarget.querySelector("input[type='text']")?.focus()
   }
 
-  // Close the modal
   close(event) {
     event?.preventDefault()
     this.modalTarget.classList.add("hidden")
     this.currentRowIndex = null
   }
 
-  // Close on backdrop click
   backdropClick(event) {
-    if (event.target === this.modalTarget) {
-      this.close()
-    }
+    if (event.target === this.modalTarget) this.close()
   }
 
-  // Close on Escape key
   handleKeydown(event) {
     if (event.key === "Escape" && !this.modalTarget.classList.contains("hidden")) {
       this.close()
     }
   }
 
-  // Submit the quick-add product form via fetch
   async submit(event) {
     event.preventDefault()
-
-    this.submitBtnTarget.disabled = true
+    this.submitBtnTarget.disabled    = true
     this.submitBtnTarget.textContent = "Saving..."
     this.clearErrors()
 
@@ -60,10 +50,10 @@ export default class extends Controller {
 
     try {
       const response = await fetch(this.urlValue, {
-        method: "POST",
+        method:  "POST",
         headers: {
           "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content,
-          "Accept": "application/json"
+          "Accept":       "application/json"
         },
         body: formData
       })
@@ -71,21 +61,19 @@ export default class extends Controller {
       const data = await response.json()
 
       if (data.success) {
-        // Find the purchase form controller and inject the new product
         const purchaseForm = document.querySelector("[data-controller~='purchase-form']")
         if (purchaseForm) {
           const controller = this.application.getControllerForElementAndIdentifier(
-            purchaseForm,
-            "purchase-form"
+            purchaseForm, "purchase-form"
           )
           controller?.injectProduct(
             data.product.id,
             data.product.name,
             data.product.category,
+            data.product.unit,        // ← pass unit
             this.currentRowIndex
           )
         }
-
         this.close()
       } else {
         this.showErrors(data.errors || ["Something went wrong."])
@@ -93,15 +81,13 @@ export default class extends Controller {
     } catch (error) {
       this.showErrors(["Network error — please try again."])
     } finally {
-      this.submitBtnTarget.disabled = false
+      this.submitBtnTarget.disabled    = false
       this.submitBtnTarget.textContent = "Add Product"
     }
   }
 
   showErrors(errors) {
-    this.errorsTarget.innerHTML = errors
-      .map(e => `<li>${e}</li>`)
-      .join("")
+    this.errorsTarget.innerHTML = errors.map(e => `<li>${e}</li>`).join("")
     this.errorsTarget.closest(".error-box").classList.remove("hidden")
   }
 

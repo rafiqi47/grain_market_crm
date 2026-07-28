@@ -1,7 +1,7 @@
 # app/models/sales_order.rb
 class SalesOrder < ApplicationRecord
   belongs_to :organization
-  belongs_to :farmer, optional: true
+  belongs_to :farmer,          optional: true
   belongs_to :trading_partner, optional: true
   has_many :sales_line_items, dependent: :destroy
 
@@ -12,28 +12,28 @@ class SalesOrder < ApplicationRecord
   validates :order_number, presence: true, uniqueness: { scope: :organization_id }
   validates :total_revenue, :total_cost, :net_profit, presence: true, numericality: true
   validates :placed_at, presence: true
-  validate :customer_reference_matches_type
+  validate  :customer_reference_matches_type
 
   def line_items_summary
     sales_line_items.includes(:product).map do |li|
-      product      = li.product
-      is_commodity = %w[seed oil_cake wanda].include?(product.category.to_s)
-
-      if is_commodity
-        total_kg = li.quantity
-        maund    = (total_kg / 40).to_i
-        kg       = (total_kg % 40).round(2)
-        "#{product.name}(#{product.slug}) -  #{maund} Maund #{kg} KG"
-      else
-        "#{product.name}(#{product.slug}) - #{li.quantity.to_i} bags"
+      product = li.product
+      qty_str = case product.unit.to_s
+      when "bag"   then "#{li.quantity.to_i} bags"
+      when "piece" then "#{li.quantity.to_i} pieces"
+      when "kg"
+        m = (li.quantity / 40).to_i
+        k = (li.quantity % 40).round(2)
+        "#{m} Maund #{k} KG"
+      when "ml"   then "#{li.quantity.to_i} ml"
+      when "gram" then "#{li.quantity.to_i} g"
+      else             "#{li.quantity}"
       end
+      "#{product.name} #{qty_str}"
     end.join(", ")
   end
 
   private
 
-  # Auto-fills customer_name from the associated record so existing
-  # reporting that reads customer_name stays accurate
   def assign_customer_name
     if farmer_customer? && farmer.present?
       self.customer_name = farmer.full_name
@@ -46,15 +46,12 @@ class SalesOrder < ApplicationRecord
     if farmer_customer? && farmer.blank?
       errors.add(:farmer, "must be selected for a farmer sale")
     end
-
     if trading_partner_customer? && trading_partner.blank?
       errors.add(:trading_partner, "must be selected for a trading partner sale")
     end
-
     if walk_in? && farmer.present?
       errors.add(:base, "Walk-in sale cannot be linked to a farmer")
     end
-
     if walk_in? && trading_partner.present?
       errors.add(:base, "Walk-in sale cannot be linked to a trading partner")
     end

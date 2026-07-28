@@ -4,7 +4,7 @@ class Suppliers::PurchasesController < ApplicationController
   before_action :set_supplier
 
   def new
-    @products = @supplier.products.order(:name)
+    @products       = @supplier.products.order(:name)
     @submitted_items = []
   end
 
@@ -13,70 +13,85 @@ class Suppliers::PurchasesController < ApplicationController
 
     if items.empty?
       flash.now[:alert] = "Please add at least one line item."
-      @products = @supplier.products.order(:name)
+      @products        = @supplier.products.order(:name)
+      @submitted_items = []
       return render :new, status: :unprocessable_entity
     end
 
     ActiveRecord::Base.transaction do
-      # Calculate total from line items
+      # ── Calculate grand total ──────────────────────────────────
       total = items.sum do |item|
-        if commodity_category?(item[:category])
-          kg              = item[:quantity_maund].to_f * 40 + item[:quantity_kg].to_f
-          price_per_maund = item[:price_commodity].to_f
-          (kg / 40.0) * price_per_maund
+        case item[:unit].to_s
+        when "kg"
+          kg = item[:quantity_maund].to_f * 40 + item[:quantity_kg].to_f
+          (kg / 40.0) * item[:price_kg].to_f
+        when "ml", "gram"
+          item[:packet_count].to_f * item[:price_packet].to_f
         else
-          item[:quantity].to_f * item[:price_non_commodity].to_f
+          item[:quantity].to_f * item[:price_count].to_f
         end
       end
 
       amount_paid      = params[:amount_paid].to_f
       amount_on_credit = total - amount_paid
 
-      # Create PurchaseOrder
+      # ── Create PurchaseOrder ───────────────────────────────────
       purchase_order = @supplier.purchase_orders.create!(
-        organization:      current_organization,
-        invoice_number:    params[:invoice_number].presence,
-        transaction_date:  params[:transaction_date].presence || Date.current,
-        total_amount:      total,
-        amount_paid:       amount_paid,
-        amount_on_credit:  amount_on_credit
+        organization:     current_organization,
+        invoice_number:   params[:invoice_number].presence,
+        transaction_date: params[:transaction_date].presence || Date.current,
+        total_amount:     total,
+        amount_paid:      amount_paid,
+        amount_on_credit: amount_on_credit
       )
 
-      # Create batches for each line item
+      # ── Create batches ─────────────────────────────────────────
       items.each do |item|
         product = current_organization.products.find(item[:product_id])
+        unit    = item[:unit].to_s
 
-        if commodity_category?(item[:category])
+        batch_attrs = {
+          organization:   current_organization,
+          purchase_order: purchase_order,
+          batch_number:   item[:batch_number].presence,
+          manufacture_date: item[:manufacture_date].presence,
+          expiry_date:    item[:expiry_date].presence
+        }
+
+        case unit
+        when "kg"
           kg              = item[:quantity_maund].to_f * 40 + item[:quantity_kg].to_f
-          price_per_maund = item[:price_commodity].to_f
-          price_per_kg    = price_per_maund > 0 ? price_per_maund / 40.0 : 0
-
-          product.product_batches.create!(
-            organization:            current_organization,
-            purchase_order:          purchase_order,
+          price_per_maund = item[:price_kg].to_f
+          batch_attrs.merge!(
             initial_quantity:        kg,
             quantity_on_hand:        kg,
-            purchase_price_per_unit: price_per_kg,
-            manufacture_date:        nil,
-            expiry_date:             nil,
-            batch_number:            nil
+            purchase_price_per_unit: price_per_maund > 0 ? price_per_maund / 40.0 : 0
+          )
+        when "ml", "gram"
+          packet_count     = item[:packet_count].to_f
+          package_size     = item[:package_size].to_f
+          price_per_packet = item[:price_packet].to_f
+          total_qty        = packet_count * package_size
+          batch_attrs.merge!(
+            initial_quantity:        total_qty,
+            quantity_on_hand:        total_qty,
+            purchase_price_per_unit: package_size > 0 ? price_per_packet / package_size : 0,
+            package_size:            package_size
           )
         else
-          product.product_batches.create!(
-            organization:            current_organization,
-            purchase_order:          purchase_order,
-            batch_number:            item[:batch_number].presence,
-            initial_quantity:        item[:quantity].to_f,
-            quantity_on_hand:        item[:quantity].to_f,
-            purchase_price_per_unit: item[:price_non_commodity].to_f,
-            manufacture_date:        item[:manufacture_date].presence,
-            expiry_date:             item[:expiry_date].presence
+          qty = item[:quantity].to_f
+          batch_attrs.merge!(
+            initial_quantity:        qty,
+            quantity_on_hand:        qty,
+            purchase_price_per_unit: item[:price_count].to_f
           )
         end
+
+        product.product_batches.create!(**batch_attrs)
       end
 
-      # Post to supplier ledger
-      last_balance = @supplier.supplier_ledgers.order(created_at: :asc, id: :asc).last&.resulting_balance || 0
+      # ── Post to supplier ledger ────────────────────────────────
+      last_balance = @supplier.supplier_ledgers.chronological.last&.resulting_balance || 0
       new_balance  = last_balance + total
 
       @supplier.supplier_ledgers.create!(
@@ -91,17 +106,18 @@ class Suppliers::PurchasesController < ApplicationController
       @supplier.update_column(:current_balance, new_balance)
     end
 
-    redirect_to supplier_path(@supplier), notice: "Purchase recorded successfully — #{params[:items]&.keys&.length || 0} items added to inventory."
+    redirect_to supplier_path(@supplier),
+      notice: "Purchase recorded — #{params[:items]&.keys&.length || 0} items added to inventory."
 
   rescue ActiveRecord::RecordInvalid => e
     flash.now[:alert] = "Could not save purchase: #{e.message} — #{e.record&.errors&.full_messages&.join(', ')}"
-    @products = @supplier.products.order(:name)
-    @submitted_items = params[:items]&.values || []
+    @products         = @supplier.products.order(:name)
+    @submitted_items  = params[:items]&.values || []
     render :new, status: :unprocessable_entity
   rescue => e
-    flash.now[:alert] = "Unexpected error: #{e.message} — #{e.class}"
-    @products = @supplier.products.order(:name)
-    @submitted_items = params[:items]&.values || []
+    flash.now[:alert] = "Unexpected error: #{e.message}"
+    @products         = @supplier.products.order(:name)
+    @submitted_items  = params[:items]&.values || []
     render :new, status: :unprocessable_entity
   end
 
@@ -109,10 +125,6 @@ class Suppliers::PurchasesController < ApplicationController
 
   def set_supplier
     @supplier = current_organization.suppliers.find(params[:supplier_id])
-  end
-
-  def commodity_category?(category)
-    %w[seed oil_cake wanda].include?(category.to_s)
   end
 
   def current_organization

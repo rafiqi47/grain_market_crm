@@ -7,7 +7,7 @@
 <!-- 2. Refresh the entire cascading ledger log container list -->
 <%= turbo_stream.replace "ledger_entries_rows" do %>
   <tbody id="ledger_entries_rows" class="bg-white divide-y divide-gray-200 font-mono text-sm">
-    <%= render "suppliers/ledger_rows", supplier: @supplier, ledger_entries: @supplier.supplier_ledgers.chronological %>
+    <%= render "suppliers/ledger_rows", supplier: @supplier, ledger_entries: @supplier.supplier_ledgers.latest %>
   </tbody>
 <% end %>
 

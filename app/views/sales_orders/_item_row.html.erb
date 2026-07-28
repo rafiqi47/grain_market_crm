@@ -14,7 +14,9 @@
         <select name="items[<%= idx %>][product_id]" required class="product-select block w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-2 focus:ring-green-600 focus:border-green-600 py-2">
           <option value="">-- Choose Product --</option>
           <% @products.each do |p| %>
-            <option value="<%= p.id %>" <%= "selected" if p_id.to_s == p.id.to_s %>><%= p.name %></option>
+            <option value="<%= p.id %>" <%= "selected" if p_id.to_s == p.id.to_s %>>
+              <%= "#{p.name} - #{p.supplier.name}" %>
+            </option>
           <% end %>
         </select>
       </div>

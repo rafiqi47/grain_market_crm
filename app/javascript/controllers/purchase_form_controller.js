@@ -1,16 +1,10 @@
 // app/javascript/controllers/purchase_form_controller.js
 import { Controller } from "@hotwired/stimulus"
 
-const COMMODITY_CATEGORIES = ["seed", "oil_cake", "wanda"]
-
 export default class extends Controller {
   static targets = [
-    "itemsContainer",
-    "itemTemplate",
-    "totalAmount",
-    "amountPaid",
-    "amountOnCredit",
-    "submitBtn"
+    "itemsContainer", "itemTemplate",
+    "totalAmount", "amountPaid", "amountOnCredit"
   ]
 
   connect() {
@@ -18,15 +12,13 @@ export default class extends Controller {
     this.recalculate()
   }
 
-  // Add a new line item row
   addRow(event) {
     event.preventDefault()
     const currentIndex = this.rowIndex
-    const template = this.itemTemplateTarget.innerHTML.replace(/INDEX/g, currentIndex)
-    this.itemsContainerTarget.insertAdjacentHTML("beforeend", template)
+    const html = this.itemTemplateTarget.innerHTML.replace(/INDEX/g, currentIndex)
+    this.itemsContainerTarget.insertAdjacentHTML("beforeend", html)
 
-    // Update the + New button's row index to match this row's actual index
-    const rows = this.itemsContainerTarget.querySelectorAll(".purchase-row")
+    const rows   = this.itemsContainerTarget.querySelectorAll(".purchase-row")
     const newRow = rows[rows.length - 1]
     const newBtn = newRow?.querySelector("[data-row-index]")
     if (newBtn) newBtn.dataset.rowIndex = currentIndex
@@ -35,52 +27,90 @@ export default class extends Controller {
     this.recalculate()
   }
 
-  // Remove a line item row
   removeRow(event) {
     event.preventDefault()
-    const row = event.currentTarget.closest(".purchase-row")
-    row.remove()
+    event.currentTarget.closest(".purchase-row").remove()
     this.recalculate()
   }
 
-  // Called when product dropdown changes — show/hide fields based on category
   productChanged(event) {
     const select = event.currentTarget
-    const row = select.closest(".purchase-row")
-    const selectedOption = select.options[select.selectedIndex]
-    const category = selectedOption?.dataset?.category || ""
+    const row    = select.closest(".purchase-row")
+    const opt    = select.options[select.selectedIndex]
+    const cat    = opt?.dataset?.category || ""
+    const unit   = opt?.dataset?.unit     || ""
 
-    this.toggleRowFields(row, category)
+    row.querySelector(".row-category")?.setAttribute("value", cat)
+    row.querySelector(".row-unit")?.setAttribute("value", unit)
 
-    // Store category on hidden field for controller to read
-    const categoryField = row.querySelector(".row-category")
-    if (categoryField) categoryField.value = category
-
+    this.toggleRowFields(row, unit)
     this.recalculate()
   }
 
-  // Called when any quantity/price field changes
+  toggleRowFields(row, unit) {
+    // Hide all unit-specific field groups
+    row.querySelectorAll(".count-fields").forEach(el  => el.classList.add("hidden"))
+    row.querySelectorAll(".kg-fields").forEach(el     => el.classList.add("hidden"))
+    row.querySelectorAll(".packet-fields").forEach(el => el.classList.add("hidden"))
+
+    // Always show shared fields (batch, dates, line total) when a unit is set
+    if (unit) {
+      row.querySelectorAll(".shared-fields").forEach(el => el.classList.remove("hidden"))
+    }
+
+    // Show the correct unit-specific group
+    if (unit === "kg") {
+      row.querySelectorAll(".kg-fields").forEach(el => el.classList.remove("hidden"))
+      // kg = commodity: batch/expiry optional
+      row.querySelectorAll(".batch-required-label").forEach(el  => el.classList.add("hidden"))
+      row.querySelectorAll(".expiry-required-label").forEach(el => el.classList.add("hidden"))
+
+    } else if (unit === "ml" || unit === "gram") {
+      row.querySelectorAll(".packet-fields").forEach(el => el.classList.remove("hidden"))
+      // Update packet unit label (ml or g)
+      row.querySelectorAll(".packet-unit-label").forEach(el => { el.textContent = unit })
+      // non-commodity: batch/expiry required
+      row.querySelectorAll(".batch-required-label").forEach(el  => el.classList.remove("hidden"))
+      row.querySelectorAll(".expiry-required-label").forEach(el => el.classList.remove("hidden"))
+
+    } else if (unit === "bag" || unit === "piece") {
+      row.querySelectorAll(".count-fields").forEach(el => el.classList.remove("hidden"))
+      // Update qty label
+      row.querySelectorAll(".qty-count-label").forEach(el => {
+        el.textContent = unit === "bag" ? "Qty (bags)" : "Qty (pieces)"
+      })
+      // non-commodity: batch/expiry required
+      row.querySelectorAll(".batch-required-label").forEach(el  => el.classList.remove("hidden"))
+      row.querySelectorAll(".expiry-required-label").forEach(el => el.classList.remove("hidden"))
+    }
+  }
+
   recalculate() {
     let total = 0
 
     this.itemsContainerTarget.querySelectorAll(".purchase-row").forEach(row => {
-      const category = row.querySelector(".row-category")?.value || ""
-      const isCommodity = COMMODITY_CATEGORIES.includes(category)
+      const unit = row.querySelector(".row-unit")?.value || ""
       let lineTotal = 0
 
-      if (isCommodity) {
-        const maund = parseFloat(row.querySelector(".qty-maund")?.value) || 0
-        const kg    = parseFloat(row.querySelector(".qty-kg")?.value) || 0
-        const rate  = parseFloat(row.querySelector(".price-field")?.value) || 0
-        const totalMaund = maund + (kg / 40)
-        lineTotal = totalMaund * rate
+      if (unit === "kg") {
+        const maund = parseFloat(row.querySelector(".qty-maund")?.value)   || 0
+        const kg    = parseFloat(row.querySelector(".qty-kg")?.value)      || 0
+        const rate  = parseFloat(row.querySelector(".price-kg")?.value)    || 0
+        lineTotal   = (maund + kg / 40) * rate
+
+      } else if (unit === "ml" || unit === "gram") {
+        const packets = parseFloat(row.querySelector(".packet-count")?.value)  || 0
+        const rate    = parseFloat(row.querySelector(".price-packet")?.value)  || 0
+        lineTotal     = packets * rate
+
       } else {
-        const qty  = parseFloat(row.querySelector(".qty-field")?.value) || 0
-        const rate = parseFloat(row.querySelector(".price-field")?.value) || 0
+        // bag / piece
+        const qty  = parseFloat(row.querySelector(".qty-count")?.value)  || 0
+        const rate = parseFloat(row.querySelector(".price-count")?.value) || 0
         lineTotal  = qty * rate
       }
 
-      // Update line total display
+      // line-total is now in the shared section — ONE per row, no ambiguity
       const lineTotalEl = row.querySelector(".line-total")
       if (lineTotalEl) {
         lineTotalEl.textContent = lineTotal > 0
@@ -91,7 +121,6 @@ export default class extends Controller {
       total += lineTotal
     })
 
-    // Update totals
     if (this.hasTotalAmountTarget) {
       this.totalAmountTarget.textContent = `Rs. ${total.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     }
@@ -107,54 +136,32 @@ export default class extends Controller {
 
     if (this.hasAmountOnCreditTarget) {
       this.amountOnCreditTarget.textContent = `Rs. ${Math.max(credit, 0).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-      this.amountOnCreditTarget.classList.toggle("text-red-600", credit > 0)
+      this.amountOnCreditTarget.classList.toggle("text-red-600",   credit > 0)
       this.amountOnCreditTarget.classList.toggle("text-green-700", credit <= 0)
     }
   }
 
-  // Inject a newly created product into a specific row's dropdown
-  injectProduct(productId, productName, productCategory, rowIndex) {
-    const rows = this.itemsContainerTarget.querySelectorAll(".purchase-row")
+  // Called by product-modal-controller after quick-add product saved
+  injectProduct(productId, productName, productCategory, productUnit, rowIndex) {
+    const rows      = this.itemsContainerTarget.querySelectorAll(".purchase-row")
     const targetRow = rows[rowIndex]
     if (!targetRow) return
 
     const select = targetRow.querySelector(".product-select")
     if (!select) return
 
-    // Add new option
-    const option = document.createElement("option")
-    option.value = productId
-    option.textContent = productName
-    option.dataset.category = productCategory
+    const option             = document.createElement("option")
+    option.value             = productId
+    option.textContent       = productName
+    option.dataset.category  = productCategory
+    option.dataset.unit      = productUnit
     select.appendChild(option)
-
-    // Auto-select it
     select.value = productId
 
-    // Trigger category toggle
-    const categoryField = targetRow.querySelector(".row-category")
-    if (categoryField) categoryField.value = productCategory
-    this.toggleRowFields(targetRow, productCategory)
+    targetRow.querySelector(".row-category")?.setAttribute("value", productCategory)
+    targetRow.querySelector(".row-unit")?.setAttribute("value", productUnit)
+
+    this.toggleRowFields(targetRow, productUnit)
     this.recalculate()
-  }
-
-  toggleRowFields(row, category) {
-    const isCommodity = COMMODITY_CATEGORIES.includes(category)
-
-    // Commodity fields (Maund + KG)
-    row.querySelectorAll(".commodity-fields").forEach(el => {
-      el.classList.toggle("hidden", !isCommodity)
-    })
-
-    // Non-commodity fields (quantity, batch, expiry, manufacture)
-    row.querySelectorAll(".non-commodity-fields").forEach(el => {
-      el.classList.toggle("hidden", isCommodity)
-    })
-
-    // Price label
-    const priceLabel = row.querySelector(".price-label")
-    if (priceLabel) {
-      priceLabel.textContent = isCommodity ? "Price / Maund" : "Price / Unit"
-    }
   }
 }

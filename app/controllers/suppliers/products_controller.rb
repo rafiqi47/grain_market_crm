@@ -26,7 +26,7 @@ class Suppliers::ProductsController < ApplicationController
     products = @supplier.products.order(:name)
     render json: {
       products: products.map do |p|
-        { id: p.id, name: p.name, urdu_slug: p.slug, category: p.category }
+        { id: p.id, name: p.name, urdu_slug: p.slug, category: p.category, unit: p.unit }
       end
     }
   end
@@ -38,11 +38,11 @@ class Suppliers::ProductsController < ApplicationController
     render json: {
       batches: batches.map do |b|
         label = if is_commodity
-          maund = (b.quantity_on_hand / 40).to_i
-          kg    = (b.quantity_on_hand % 40).round(2)
-          "#{@product.name} — #{maund}M #{kg}KG on hand"
+          m = (b.quantity_on_hand / 40).to_i
+          k = (b.quantity_on_hand % 40).round(2)
+          "#{@product.name} — #{m}M #{k}KG on hand"
         else
-          "#{b.batch_number.presence || 'No batch #'} — #{b.quantity_on_hand.to_i} units on hand"
+          "#{b.batch_number.presence || 'No batch #'} — #{b.quantity_on_hand.to_i} #{@product.unit} on hand"
         end
         { id: b.id, label: label }
       end
@@ -50,13 +50,25 @@ class Suppliers::ProductsController < ApplicationController
   end
 
   def quick_create
-    @product         = current_organization.products.new(product_params)
+    @product          = current_organization.products.new(product_params)
     @product.supplier = @supplier
 
     if @product.save
-      render json: { success: true, product: { id: @product.id, name: @product.name, slug: @product.slug, category: @product.category } }
+      render json: {
+        success: true,
+        product: {
+          id:       @product.id,
+          name:     @product.name,
+          slug:     @product.slug,
+          category: @product.category,
+          unit:     @product.unit
+        }
+      }
     else
-      render json: { success: false, errors: @product.errors.full_messages }, status: :unprocessable_entity
+      render json: {
+        success: false,
+        errors:  @product.errors.full_messages
+      }, status: :unprocessable_entity
     end
   end
 
@@ -71,7 +83,7 @@ class Suppliers::ProductsController < ApplicationController
   end
 
   def product_params
-    params.require(:product).permit(:name, :slug, :category, :sku, :reorder_threshold)
+    params.require(:product).permit(:name, :slug, :category, :sku, :reorder_threshold, :unit)
   end
 
   def current_organization

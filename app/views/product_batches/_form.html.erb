@@ -1,5 +1,26 @@
-<!-- app/views/product_batches/_form.html.erb -->
-<% is_commodity = %w[seed oil_cake wanda].include?(product.category.to_s) %>
+<%
+  unit         = product.unit.to_s
+  is_kg        = unit == "kg"
+  is_packet    = %w[ml gram].include?(unit)
+  is_count     = %w[bag piece].include?(unit)
+  is_commodity = %w[seed oil_cake wanda].include?(product.category.to_s)
+  is_new       = product_batch.new_record?
+  unit_label   = { "bag" => "bags", "piece" => "pieces", "ml" => "ml", "gram" => "g", "kg" => "KG" }[unit] || unit
+
+  # Derive display values for edit forms
+  if !is_new
+    if is_kg
+      edit_maund  = product_batch.quantity_on_hand ? (product_batch.quantity_on_hand / 40).to_i : 0
+      edit_kg     = product_batch.quantity_on_hand ? (product_batch.quantity_on_hand % 40).round(2) : 0
+      edit_price  = product_batch.purchase_price_per_unit ? (product_batch.purchase_price_per_unit * 40).round(2) : 0
+    elsif is_packet
+      ps           = product_batch.package_size.to_f
+      edit_count   = (ps > 0 && product_batch.quantity_on_hand) ? (product_batch.quantity_on_hand / ps).to_i : 0
+      edit_ps      = ps > 0 ? ps : nil
+      edit_price   = (ps > 0 && product_batch.purchase_price_per_unit) ? (product_batch.purchase_price_per_unit * ps).round(2) : 0
+    end
+  end
+%>
 
 <%= form_with(model: [product, product_batch], class: "space-y-4") do |f| %>
   <% if product_batch.errors.any? %>
@@ -9,80 +30,199 @@
   <% end %>
 
   <div class="grid grid-cols-2 gap-4">
+
+    <!-- Batch Number -->
     <div>
-      <%= f.label :batch_number, is_commodity ? "Lot / Batch # (Optional)" : "Lot / Batch #", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-      <%= f.text_field :batch_number, placeholder: is_commodity ? "e.g., Loose Stock" : "ENG-DAP-01", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: !is_commodity %>
+      <%= f.label :batch_number,
+            is_commodity ? "Lot / Batch # (Optional)" : "Lot / Batch #",
+            class: "block text-xs font-semibold text-gray-600 uppercase" %>
+      <%= f.text_field :batch_number,
+            placeholder: is_commodity ? "e.g., Loose Stock" : "e.g. DAP-001",
+            class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm",
+            required: !is_commodity %>
     </div>
-    
-    <% if product_batch.new_record? %>
+
+    <!-- COUNT (bag / piece) -->
+    <% if is_count %>
       <div>
-        <%= f.label :initial_quantity, is_commodity ? "Initial Weight (KGs)" : "Initial Bags Qty", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-        <%= f.number_field :initial_quantity, min: 1, step: is_commodity ? "0.01" : "1", id: "batch_initial_qty", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
+        <label class="block text-xs font-semibold text-gray-600 uppercase">
+          <%= is_new ? "Initial #{unit_label.capitalize} Count" : "#{unit_label.capitalize} on Hand" %>
+        </label>
+        <%= f.number_field(is_new ? :initial_quantity : :quantity_on_hand,
+              min: 0, step: 1, id: "batch_initial_qty",
+              class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm",
+              required: true) %>
       </div>
-    <% else %>
+
+    <!-- KG (oil_cake / seed / wanda) -->
+    <% elsif is_kg %>
       <div>
-        <%= f.label :quantity_on_hand, is_commodity ? "Current Stock Left (KGs)" : "Current Stock Left", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-        <%= f.number_field :quantity_on_hand, min: 0, step: is_commodity ? "0.01" : "1", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
+        <label class="block text-xs font-semibold text-gray-600 uppercase">
+          <%= is_new ? "Initial Weight" : "Weight on Hand" %>
+        </label>
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <div>
+            <label class="block text-[10px] text-gray-400 mb-0.5">Maund</label>
+            <input type="number"
+                   name="product_batch[quantity_maund]"
+                   id="batch_initial_qty"
+                   value="<%= is_new ? nil : edit_maund %>"
+                   min="0" step="1"
+                   class="block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                   required>
+          </div>
+          <div>
+            <label class="block text-[10px] text-gray-400 mb-0.5">KG</label>
+            <input type="number"
+                   name="product_batch[quantity_kg]"
+                   value="<%= is_new ? nil : edit_kg %>"
+                   min="0" max="39.99" step="0.01"
+                   class="block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+          </div>
+        </div>
+      </div>
+
+    <!-- PACKET (ml / gram) -->
+    <% elsif is_packet %>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 uppercase">
+          <%= is_new ? "Initial Stock" : "Current Stock" %>
+        </label>
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <div>
+            <label class="block text-[10px] text-gray-400 mb-0.5">Packet Count</label>
+            <input type="number"
+                   name="product_batch[packet_count]"
+                   id="batch_initial_qty"
+                   value="<%= is_new ? nil : edit_count %>"
+                   min="0" step="1"
+                   class="block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                   required>
+          </div>
+          <div>
+            <label class="block text-[10px] text-gray-400 mb-0.5">Size per packet (<%= unit_label %>)</label>
+            <input type="number"
+                   name="product_batch[package_size]"
+                   value="<%= is_new ? nil : edit_ps %>"
+                   min="0.01" step="0.01"
+                   class="block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                   required>
+          </div>
+        </div>
       </div>
     <% end %>
   </div>
 
+  <!-- Price -->
   <div>
-    <%= f.label :purchase_price_per_unit, is_commodity ? "Purchase Rate Per KG (PKR)" : "Purchase Cost Per Bag (PKR)", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-    <%= f.number_field :purchase_price_per_unit, step: "0.01", min: "0", id: "batch_unit_cost", class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: true %>
+    <%
+      price_label = case unit
+      when "bag"   then "Purchase Cost Per Bag (Rs.)"
+      when "piece" then "Purchase Cost Per Piece (Rs.)"
+      when "kg"    then "Purchase Rate Per Maund (Rs.)"
+      when "ml"    then "Purchase Cost Per Packet (Rs.)"
+      when "gram"  then "Purchase Cost Per Packet (Rs.)"
+      else              "Purchase Price"
+      end
+    %>
+    <label class="block text-xs font-semibold text-gray-600 uppercase"><%= price_label %></label>
+
+    <% if is_kg %>
+      <input type="number" name="product_batch[price_per_maund]"
+             id="batch_unit_cost"
+             value="<%= is_new ? nil : edit_price %>"
+             min="0" step="0.01"
+             class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+             required>
+    <% elsif is_packet %>
+      <input type="number" name="product_batch[price_per_packet]"
+             id="batch_unit_cost"
+             value="<%= is_new ? nil : edit_price %>"
+             min="0" step="0.01"
+             class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+             required>
+    <% else %>
+      <%= f.number_field :purchase_price_per_unit,
+            step: "0.01", min: "0", id: "batch_unit_cost",
+            class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm",
+            required: true %>
+    <% end %>
   </div>
 
-  <% if product_batch.new_record? %>
-    <!-- Automated Financial Split Layer (Khaata Allocation) -->
+  <!-- Financial section — new record only -->
+  <% if is_new %>
     <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
-      <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Financial Agreement Structure</span>
-      
+      <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Financial Agreement</span>
       <div>
-        <label for="amount_paid" class="block text-xs font-semibold text-gray-600 uppercase">Amount Paid Upfront (Cash/Bank)</label>
-        <input type="number" name="financials[amount_paid]" id="batch_amount_paid" value="0" min="0" step="0.01" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" required>
+        <label class="block text-xs font-semibold text-gray-600 uppercase">Amount Paid Upfront (Rs.)</label>
+        <input type="number" name="financials[amount_paid]" id="batch_amount_paid"
+               value="0" min="0" step="0.01"
+               class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
       </div>
-
       <div class="pt-1 border-t border-slate-200 flex justify-between text-xs text-gray-500 font-medium">
         <span>Estimated Total Value:</span>
         <span id="calculated_total_cost" class="font-bold text-gray-900 font-mono">Rs. 0</span>
       </div>
     </div>
 
-    <!-- Client-Side Real-Time Calculator Script -->
     <script>
       (function() {
-        const qtyInput = document.getElementById("batch_initial_qty");
-        const costInput = document.getElementById("batch_unit_cost");
-        const totalDisplay = document.getElementById("calculated_total_cost");
+        const qtyEl    = document.getElementById("batch_initial_qty")
+        const costEl   = document.getElementById("batch_unit_cost")
+        const totalEl  = document.getElementById("calculated_total_cost")
+        const unit     = "<%= unit %>"
 
         function calculate() {
-          const qty = parseFloat(qtyInput.value) || 0;
-          const cost = parseFloat(costInput.value) || 0;
-          totalDisplay.textContent = "Rs. " + Math.round(qty * cost).toLocaleString();
+          if (!costEl || !totalEl) return
+          const cost = parseFloat(costEl.value) || 0
+          let total  = 0
+
+          if (unit === "kg") {
+            const kgEl    = document.querySelector("input[name='product_batch[quantity_kg]']")
+            const maund   = parseFloat(qtyEl?.value) || 0
+            const kg      = parseFloat(kgEl?.value) || 0
+            total = (maund + kg / 40) * cost
+
+          } else if (unit === "ml" || unit === "gram") {
+            const packets = parseFloat(qtyEl?.value) || 0
+            total = packets * cost
+
+          } else {
+            total = (parseFloat(qtyEl?.value) || 0) * cost
+          }
+
+          totalEl.textContent = "Rs. " + Math.round(total).toLocaleString()
         }
 
-        if (qtyInput && costInput) {
-          qtyInput.addEventListener("input", calculate);
-          costInput.addEventListener("input", calculate);
-          calculate();
-        }
-      })();
+        document.querySelectorAll(
+          "#batch_initial_qty, #batch_unit_cost, input[name='product_batch[quantity_kg]']"
+        ).forEach(el => el?.addEventListener("input", calculate))
+        calculate()
+      })()
     </script>
   <% end %>
 
+  <!-- Dates -->
   <div class="grid grid-cols-2 gap-4">
     <div>
       <%= f.label :manufacture_date, "Mfg Date (Optional)", class: "block text-xs font-semibold text-gray-600 uppercase" %>
       <%= f.date_field :manufacture_date, class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" %>
     </div>
     <div>
-      <%= f.label :expiry_date, is_commodity ? "Expiry Date (Optional)" : "Expiry Date", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-      <%= f.date_field :expiry_date, class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm", required: !is_commodity %>
+      <%= f.label :expiry_date, is_commodity ? "Expiry Date (Optional)" : "Expiry Date",
+            class: "block text-xs font-semibold text-gray-600 uppercase" %>
+      <%= f.date_field :expiry_date,
+            class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm",
+            required: !is_commodity %>
     </div>
   </div>
 
   <div class="flex justify-end gap-2 pt-2">
-    <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer" onclick="let frame = this.closest('turbo-frame'); if(frame) { frame.src = ''; frame.innerHTML = ''; }">Cancel</button>
+    <button type="button"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
+            onclick="let frame = this.closest('turbo-frame'); if(frame) { frame.src = ''; frame.innerHTML = ''; }">
+      Cancel
+    </button>
     <%= f.submit submit_label, class: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 cursor-pointer" %>
   </div>
 <% end %>

@@ -124,35 +124,9 @@
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200 font-mono text-sm">
+          <tbody class="bg-white divide-y divide-gray-200 font-mono text-sm" id="ledger_entries_rows">
             <% if @ledger_entries.any? %>
-              <% @ledger_entries.each do |entry| %>
-                <tr class="hover:bg-gray-50 transition-colors">
-                  <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                    <%= entry.created_at.strftime("%b %d, %Y - %I:%M %p") %>
-                  </td>
-                  <td class="px-6 py-4 text-xs text-gray-700 font-sans"><%= entry.description %></td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-[10px] leading-5 font-bold rounded-full <%= entry.purchase? ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' %> uppercase">
-                      <%= entry.entry_type %>
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-right font-bold <%= entry.purchase? ? 'text-amber-700' : 'text-emerald-700' %>">
-                    <%= entry.purchase? ? '+' : '-' %> Rs. <%= number_with_delimiter(entry.amount) %>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-right text-gray-900 font-bold">
-                    Rs. <%= number_with_delimiter(entry.resulting_balance) %>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-right text-xs font-sans font-medium space-x-2">
-                    <%= link_to "Edit", edit_supplier_supplier_ledger_path(@supplier, entry),
-                          class: "text-indigo-600 hover:text-indigo-900",
-                          data: { turbo_frame: "modal" } %>
-                    <%= link_to "Delete", supplier_supplier_ledger_path(@supplier, entry),
-                          class: "text-red-600 hover:text-red-900 font-medium",
-                          data: { turbo_method: :delete, turbo_confirm: "Are you sure? This will recalculate all balances." } %>
-                  </td>
-                </tr>
-              <% end %>
+              <%= render "suppliers/ledger_rows", supplier: @supplier, ledger_entries: @ledger_entries %>
             <% else %>
               <tr>
                 <td colspan="6" class="px-6 py-10 text-center text-gray-500 font-sans text-sm bg-gray-50">

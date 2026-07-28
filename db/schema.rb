@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_26_122241) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_27_035542) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -163,6 +163,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_26_122241) do
     t.datetime "updated_at", null: false
     t.bigint "organization_id"
     t.bigint "purchase_order_id"
+    t.decimal "package_size", precision: 10, scale: 2
     t.index ["expiry_date"], name: "index_product_batches_on_expiry_date"
     t.index ["organization_id"], name: "index_product_batches_on_organization_id"
     t.index ["product_id", "batch_number"], name: "index_product_batches_on_product_id_and_batch_number"
@@ -180,8 +181,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_26_122241) do
     t.datetime "updated_at", null: false
     t.integer "reorder_threshold", default: 5, null: false
     t.string "slug"
+    t.integer "unit", default: 0, null: false
+    t.decimal "package_size", precision: 10, scale: 2
     t.index ["organization_id", "sku"], name: "index_products_on_organization_id_and_sku", unique: true, where: "(sku IS NOT NULL)"
-    t.index ["organization_id", "slug"], name: "index_products_on_organization_id_and_slug", unique: true
     t.index ["organization_id"], name: "index_products_on_organization_id"
     t.index ["supplier_id"], name: "index_products_on_supplier_id"
   end

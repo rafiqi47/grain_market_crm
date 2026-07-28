@@ -1,29 +1,31 @@
 <% submitted_item ||= nil %>
 <% s = submitted_item || {} %>
+<% submitted_unit = s["unit"].to_s %>
+<% is_template    = index.to_s == "INDEX" %>
 
-<div class="purchase-row px-6 py-5 bg-white hover:bg-gray-50/50 transition-colors">
+<div class="purchase-row border-b border-gray-100 px-6 py-5 bg-white hover:bg-gray-50/50 transition-colors">
   <input type="hidden" name="items[<%= index %>][category]" class="row-category" value="<%= s["category"] %>">
+  <input type="hidden" name="items[<%= index %>][unit]"     class="row-unit"     value="<%= submitted_unit %>">
 
   <div class="grid grid-cols-12 gap-3 items-start">
 
-    <!-- Product Select (col 4) -->
+    <!-- Product Select -->
     <div class="col-span-4">
       <label class="block text-xs font-semibold text-gray-600 mb-1">Product</label>
       <div class="flex gap-2">
         <select name="items[<%= index %>][product_id]"
                 data-action="change->purchase-form#productChanged"
-                class="product-select flex-1 rounded-md border-gray-300 shadow-sm text-sm">
+                class="product-select flex-1 p-2 border-gray-300 shadow-sm text-sm">
           <option value="">— Select product —</option>
           <% products.each do |product| %>
             <option value="<%= product.id %>"
                     data-category="<%= product.category %>"
+                    data-unit="<%= product.unit %>"
                     <%= "selected" if s["product_id"].to_s == product.id.to_s %>>
-              <%= product.name %>
+              <%= product.name %><%= " / #{product.slug}" if product.slug.present? %>
             </option>
           <% end %>
         </select>
-
-        <!-- Quick add new product button -->
         <button type="button"
                 data-action="click->product-modal#open"
                 data-row-index="<%= index %>"
@@ -34,86 +36,87 @@
       </div>
     </div>
 
-    <!-- NON-COMMODITY: Quantity, Batch, Manufacture, Expiry -->
-    <div class="col-span-7 non-commodity-fields">
-      <div class="grid grid-cols-4 gap-3">
-       <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Qty (bags)</label>
+    <!-- COUNT fields: bag / piece -->
+    <div class="col-span-7 count-fields <%= (!is_template && %w[bag piece].include?(submitted_unit)) ? '' : 'hidden' %>">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1 qty-count-label">Qty</label>
           <input type="number" name="items[<%= index %>][quantity]" min="1" step="1"
                  value="<%= s["quantity"] %>"
                  data-action="input->purchase-form#recalculate"
-                 class="qty-field w-full rounded-md border-gray-300 shadow-sm text-sm">
+                 class="qty-count w-full p-2 border-gray-300 shadow-sm text-sm">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1 price-label">Price / Unit</label>
-          <input type="number" name="items[<%= index %>][price_non_commodity]" min="0" step="0.01"
-                 value="<%= s["price_non_commodity"] %>"
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Price / Unit (Rs.)</label>
+          <input type="number" name="items[<%= index %>][price_count]" min="0" step="0.01"
+                 value="<%= s["price_count"] %>"
                  data-action="input->purchase-form#recalculate"
-                 class="price-field w-full rounded-md border-gray-300 shadow-sm text-sm">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Batch No.</label>
-          <input type="text" name="items[<%= index %>][batch_number]"
-                 value="<%= s["batch_number"] %>"
-                 placeholder="e.g. B-001"
-                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Expiry Date</label>
-          <input type="date" name="items[<%= index %>][expiry_date]"
-                 value="<%= s["expiry_date"] %>"
-                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
-        </div>
-      </div>
-      <div class="grid grid-cols-4 gap-3 mt-2">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Mfg. Date</label>
-          <input type="date" name="items[<%= index %>][manufacture_date]"
-                 value="<%= s["manufacture_date"] %>"
-                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
-        </div>
-        <div class="col-span-3 flex items-end">
-          <p class="text-xs text-gray-400 pb-2">Line total: <span class="line-total font-semibold text-gray-700">—</span></p>
+                 class="price-count w-full p-2 border-gray-300 shadow-sm text-sm">
         </div>
       </div>
     </div>
 
-    <!-- COMMODITY: Maund + KG + Price per Maund -->
-    <div class="col-span-7 commodity-fields hidden">
-      <div class="grid grid-cols-4 gap-3">
+    <!-- KG fields: oil_cake / seed / wanda -->
+    <div class="col-span-7 kg-fields <%= (!is_template && submitted_unit == "kg") ? '' : 'hidden' %>">
+      <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1">Maund</label>
           <input type="number" name="items[<%= index %>][quantity_maund]" min="0" step="1"
                  value="<%= s["quantity_maund"] %>"
                  data-action="input->purchase-form#recalculate"
-                 class="qty-maund w-full rounded-md border-gray-300 shadow-sm text-sm">
+                 class="qty-maund w-full p-2 border-gray-300 shadow-sm text-sm">
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1">KG</label>
           <input type="number" name="items[<%= index %>][quantity_kg]" min="0" max="39.99" step="0.01"
                  value="<%= s["quantity_kg"] %>"
                  data-action="input->purchase-form#recalculate"
-                 class="qty-kg w-full rounded-md border-gray-300 shadow-sm text-sm">
+                 class="qty-kg w-full p-2 border-gray-300 shadow-sm text-sm">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1 price-label">Price / Maund</label>
-          <input type="number" name="items[<%= index %>][price_commodity]" min="0" step="0.01"
-                 value="<%= s["price_commodity"] %>"
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Price / Maund (Rs.)</label>
+          <input type="number" name="items[<%= index %>][price_kg]" min="0" step="0.01"
+                 value="<%= s["price_kg"] %>"
                  data-action="input->purchase-form#recalculate"
-                 class="price-field w-full rounded-md border-gray-300 shadow-sm text-sm">
-        </div>
-        <div class="flex items-end">
-          <p class="text-xs text-gray-400 pb-2">Total: <span class="line-total font-semibold text-gray-700">—</span></p>
+                 class="price-kg w-full p-2 border-gray-300 shadow-sm text-sm">
         </div>
       </div>
     </div>
 
-    <!-- Remove button (col 1) -->
-    <div class="col-span-1 flex items-end justify-end pb-2">
+    <!-- PACKET fields: ml / gram -->
+    <div class="col-span-7 packet-fields <%= (!is_template && %w[ml gram].include?(submitted_unit)) ? '' : 'hidden' %>">
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Packet Count</label>
+          <input type="number" name="items[<%= index %>][packet_count]" min="0" step="1"
+                 value="<%= s["packet_count"] %>"
+                 data-action="input->purchase-form#recalculate"
+                 class="packet-count w-full p-2 border-gray-300 shadow-sm text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">
+            Size / packet (<span class="packet-unit-label"><%= submitted_unit.presence || "ml" %></span>)
+          </label>
+          <input type="number" name="items[<%= index %>][package_size]" min="0.01" step="0.01"
+                 value="<%= s["package_size"] %>"
+                 class="w-full p-2 border-gray-300 shadow-sm text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Price / Packet (Rs.)</label>
+          <input type="number" name="items[<%= index %>][price_packet]" min="0" step="0.01"
+                 value="<%= s["price_packet"] %>"
+                 data-action="input->purchase-form#recalculate"
+                 class="price-packet w-full p-2 border-gray-300 shadow-sm text-sm">
+        </div>
+      </div>
+    </div>
+
+    <!-- Remove button -->
+    <div class="col-span-1 flex items-center justify-end pt-5">
       <button type="button"
-              data-action="click->purchase-form#removeRow"
-              class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-              title="Remove row">
+        data-action="click->purchase-form#removeRow"
+        class="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 rounded-md transition-colors"
+        title="Remove row">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
@@ -121,4 +124,48 @@
     </div>
 
   </div>
+
+  <%#
+    SHARED fields — batch number, dates, line total.
+    These appear ONCE per row (no duplicates).
+    Shown after product is selected; hidden for template/unselected rows.
+    kg (commodity): batch + expiry are optional per model validation.
+    bag/piece/ml/gram: batch + expiry are required per model validation.
+  %>
+  <div class="shared-fields <%= (!is_template && submitted_unit.present?) ? '' : 'hidden' %> mt-3 pt-3 border-t border-gray-100">
+    <div class="grid grid-cols-4 gap-3 items-end">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">
+          Batch No.
+          <span class="batch-required-label text-red-400 <%= submitted_unit == 'kg' ? 'hidden' : '' %>">*</span>
+          <span class="text-gray-400 font-normal <%= submitted_unit == 'kg' ? '' : 'hidden' %>">(optional)</span>
+        </label>
+        <input type="text" name="items[<%= index %>][batch_number]"
+               value="<%= s["batch_number"] %>"
+               placeholder="e.g. B-001"
+               class="w-full p-2 border-gray-300 shadow-sm text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">
+          Expiry Date
+          <span class="expiry-required-label text-red-400 <%= submitted_unit == 'kg' ? 'hidden' : '' %>">*</span>
+          <span class="text-gray-400 font-normal <%= submitted_unit == 'kg' ? '' : 'hidden' %>">(optional)</span>
+        </label>
+        <input type="date" name="items[<%= index %>][expiry_date]"
+               value="<%= s["expiry_date"] %>"
+               class="w-full p-2 border-gray-300 shadow-sm text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Mfg. Date <span class="text-gray-400 font-normal">(optional)</span></label>
+        <input type="date" name="items[<%= index %>][manufacture_date]"
+               value="<%= s["manufacture_date"] %>"
+               class="w-full p-2 border-gray-300 shadow-sm text-sm">
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-gray-400">Line total</p>
+        <p class="font-semibold text-gray-800 text-sm line-total">—</p>
+      </div>
+    </div>
+  </div>
+
 </div>
