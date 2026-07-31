@@ -136,45 +136,58 @@
 
 <script>
   document.addEventListener("turbo:load", function() {
-    const container = document.getElementById("items-container");
-    const addButton = document.getElementById("add-item-btn");
-    const template = document.getElementById("item-row-template");
+    const container  = document.getElementById("items-container");
+    const addButton  = document.getElementById("add-item-btn");
+    const template   = document.getElementById("item-row-template");
     const emptyState = document.getElementById("empty-state-placeholder");
 
     if (!container || !addButton || !template) return;
 
-    // Clone button to sweep stale event listeners cleanly
     const freshAddButton = addButton.cloneNode(true);
     addButton.parentNode.replaceChild(freshAddButton, addButton);
 
-    // Dynamic Rails Inventory JSON Mapping
+    // ── Inventory data: unit + batches with packageSize ─────────────
     const inventoryData = {
       <% (@products || []).each do |product| %>
-        "<%= product.id %>": [
-          <% product.product_batches.active.each do |batch| %>
-            { id: "<%= batch.id %>", label: "Lot: <%= escape_javascript(batch.batch_number) %> <%= batch.available_batch_details %>" },
-          <% end %>
-        ],
+        "<%= product.id %>": {
+          unit: "<%= product.unit %>",
+          batches: [
+            <% product.product_batches.active.each do |batch| %>
+              {
+                id: "<%= batch.id %>",
+                packageSize: <%= batch.package_size.to_f %>,
+                label: "Lot: <%= escape_javascript(batch.batch_number.to_s) %> <%= escape_javascript(batch.available_batch_details) %>"
+              },
+            <% end %>
+          ]
+        },
       <% end %>
     };
 
-    function toggleSubmitButton() {
-      const submitButton = document.querySelector('input[type="submit"]');
-      const rowCount = container.querySelectorAll(".item-row").length;
-      
-      if (submitButton) {
-        submitButton.disabled = rowCount === 0;
-        submitButton.style.opacity = rowCount === 0 ? "0.5" : "1";
-        submitButton.style.cursor = rowCount === 0 ? "not-allowed" : "pointer";
-      }
+    const PACKET_UNITS = ["ml", "gram"];
 
-      if (emptyState) {
-        if (rowCount === 0) {
-          emptyState.classList.remove("hidden");
-        } else {
-          emptyState.classList.add("hidden");
-        }
+    // ── Label maps ───────────────────────────────────────────────────
+    const QTY_LABELS = {
+      ml:    "Qty (bottles)",   gram:  "Qty (packets)",
+      bag:   "Qty (bags)",      piece: "Qty (pieces)",
+      kg:    "Qty (KG)"
+    };
+    const PRICE_LABELS = {
+      ml:    "Price / bottle (Rs.)",  gram:  "Price / packet (Rs.)",
+      bag:   "Price / bag (Rs.)",     piece: "Price / piece (Rs.)",
+      kg:    "Price / KG (Rs.)"
+    };
+
+    // ── Helpers ──────────────────────────────────────────────────────
+    function toggleSubmitButton() {
+      const btn      = document.querySelector('input[type="submit"]');
+      const rowCount = container.querySelectorAll(".item-row").length;
+      if (btn) {
+        btn.disabled      = rowCount === 0;
+        btn.style.opacity = rowCount === 0 ? "0.5" : "1";
+        btn.style.cursor  = rowCount === 0 ? "not-allowed" : "pointer";
       }
+      if (emptyState) emptyState.classList.toggle("hidden", rowCount > 0);
     }
 
     function setupRow(row) {
@@ -190,25 +203,103 @@
       }
     }
 
+    function updateLabels(row, unit) {
+      const qtyLabel   = row.querySelector(".qty-label");
+      const priceLabel = row.querySelector(".price-label");
+      if (qtyLabel)   qtyLabel.textContent   = QTY_LABELS[unit]   || "Qty";
+      if (priceLabel) priceLabel.textContent = PRICE_LABELS[unit]  || "Price (Rs.)";
+    }
+
+    // ── Step 1: populate package sizes when product changes ──────────
+    function filterPackageSizes(row, isInitialLoad = false) {
+      if (!row) return;
+      const productSelect      = row.querySelector(".product-select");
+      const packageSizeWrapper = row.querySelector(".package-size-wrapper");
+      const packageSizeSelect  = row.querySelector(".package-size-select");
+      const batchSelect        = row.querySelector(".batch-select");
+      if (!productSelect || !packageSizeWrapper || !packageSizeSelect) return;
+
+      const productId   = productSelect.value;
+      const productData = inventoryData[productId];
+      const unit        = productData?.unit || "";
+
+      // Update qty/price labels
+      if (unit) updateLabels(row, unit);
+
+      // Non-packet: hide package size, return
+      if (!productData || !PACKET_UNITS.includes(unit)) {
+        packageSizeWrapper.classList.add("hidden");
+        return;
+      }
+
+      // Distinct sizes from active batches
+      const sizes = [...new Set(
+        productData.batches.map(b => b.packageSize).filter(s => s > 0)
+      )].sort((a, b) => a - b);
+
+      const prevSize = packageSizeSelect.getAttribute("data-selected-size");
+      const unitWord = unit === "ml" ? "bottle" : "packet";
+
+      packageSizeSelect.innerHTML = `<option value="">-- Select ${unitWord} size --</option>`;
+      sizes.forEach(size => {
+        const opt       = document.createElement("option");
+        opt.value       = size;
+        opt.textContent = `${size} ${unit}`;
+        if (isInitialLoad && String(prevSize) === String(size)) opt.selected = true;
+        packageSizeSelect.appendChild(opt);
+      });
+
+      packageSizeWrapper.classList.remove("hidden");
+
+      // If no size selected yet, clear batch select
+      if (!packageSizeSelect.value && batchSelect) {
+        batchSelect.innerHTML = `<option value="">Select a ${unitWord} size first</option>`;
+      }
+    }
+
+    // ── Step 2: populate batches when product (or package size) changes
     function filterBatches(row, isInitialLoad = false) {
       if (!row) return;
-      const productSelect = row.querySelector(".product-select");
-      const batchSelect = row.querySelector(".batch-select");
+      const productSelect     = row.querySelector(".product-select");
+      const batchSelect       = row.querySelector(".batch-select");
+      const packageSizeSelect = row.querySelector(".package-size-select");
       if (!productSelect || !batchSelect) return;
 
-      const selectedProductId = productSelect.value;
-      const previouslySelectedId = batchSelect.getAttribute("data-selected-id");
-      batchSelect.innerHTML = '<option value="">Automated FIFO (Oldest First)</option>';
+      const productId      = productSelect.value;
+      const productData    = inventoryData[productId];
+      const prevSelectedId = batchSelect.getAttribute("data-selected-id");
 
-      if (selectedProductId && inventoryData[selectedProductId]) {
-        inventoryData[selectedProductId].forEach(batch => {
-          const option = document.createElement("option");
-          option.value = batch.id;
-          option.textContent = batch.label;
-          if (isInitialLoad && String(previouslySelectedId) === String(batch.id)) option.selected = true;
-          batchSelect.appendChild(option);
-        });
+      if (!productData) {
+        batchSelect.innerHTML = '<option value="">Automated FIFO (Oldest First)</option>';
+        return;
       }
+
+      const unit     = productData.unit || "";
+      const isPacket = PACKET_UNITS.includes(unit);
+
+      let batchesToShow = productData.batches;
+
+      if (isPacket) {
+        const selectedSize = parseFloat(packageSizeSelect?.value);
+        if (!selectedSize || selectedSize <= 0) {
+          // No package size chosen yet
+          batchSelect.innerHTML = `<option value="">Select a size first</option>`;
+          return;
+        }
+        // Filter to matching package size only
+        batchesToShow = productData.batches.filter(b => b.packageSize === selectedSize);
+        batchSelect.innerHTML = `<option value="">Automated FIFO (${selectedSize}${unit}, oldest first)</option>`;
+      } else {
+        batchSelect.innerHTML = '<option value="">Automated FIFO (Oldest First)</option>';
+      }
+
+      batchesToShow.forEach(batch => {
+        const opt       = document.createElement("option");
+        opt.value       = batch.id;
+        opt.textContent = batch.label;
+        if (isInitialLoad && String(prevSelectedId) === String(batch.id)) opt.selected = true;
+        batchSelect.appendChild(opt);
+      });
     }
 
     function reindexRows() {
@@ -219,26 +310,33 @@
       });
     }
 
-    // Initialize Active Form Elements
+    // ── Initialize existing rows (edit form re-population) ───────────
     container.querySelectorAll(".item-row").forEach(row => {
+      filterPackageSizes(row, true);
       filterBatches(row, true);
       setupRow(row);
     });
 
-    // Delegated Change Tracking Loop
+    // ── Delegated change handler ─────────────────────────────────────
     container.addEventListener("change", (e) => {
+      const row = e.target.closest(".item-row");
+      if (!row) return;
+
       if (e.target.classList.contains("product-select")) {
-        filterBatches(e.target.closest(".item-row"));
+        filterPackageSizes(row);
+        filterBatches(row);
+      }
+      if (e.target.classList.contains("package-size-select")) {
+        filterBatches(row);
       }
     });
 
-    // Insertion Handler
+    // ── Add new row ──────────────────────────────────────────────────
     freshAddButton.addEventListener("click", function(event) {
       event.preventDefault();
       const index = container.querySelectorAll(".item-row").length;
-      let clone = template.content.cloneNode(true);
+      let clone   = template.content.cloneNode(true);
 
-      // Safety handling if partial does not have .item-row top container
       let rootEl = clone.querySelector(".item-row") || clone.firstElementChild;
       if (rootEl && !rootEl.classList.contains("item-row")) {
         rootEl.classList.add("item-row");
@@ -251,9 +349,9 @@
       setupRow(rootEl);
       container.appendChild(clone);
 
-      // Re-query inserted node to ensure accurate state execution context
-      const newlyCreatedRow = container.lastElementChild;
-      filterBatches(newlyCreatedRow);
+      const newRow = container.lastElementChild;
+      filterPackageSizes(newRow);
+      filterBatches(newRow);
       reindexRows();
       toggleSubmitButton();
     });
@@ -261,3 +359,4 @@
     toggleSubmitButton();
   });
 </script>
+

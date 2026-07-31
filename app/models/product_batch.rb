@@ -64,10 +64,26 @@ class ProductBatch < ApplicationRecord
     end
   end
 
+  # Used in sales order form inventory dropdown labels
   def available_batch_details
-    return "[Avail: #{self.quantity_on_hand} #{self.product.unit}]" if self.package_size.nil?
+    return "[#{quantity_on_hand} available]" if product.nil?
 
-    "[Avail: #{self.quantity_on_hand.to_f/self.package_size.to_f} item/s of #{self.package_size} #{self.product.unit}"
+    case product.unit.to_s
+    when "bag"   then "[#{quantity_on_hand.to_i} bags available]"
+    when "piece" then "[#{quantity_on_hand.to_i} pieces available]"
+    when "kg"
+      m = (quantity_on_hand / 40).to_i
+      k = (quantity_on_hand % 40).round(2)
+      "[#{m}M #{k}KG available]"
+    when "ml"
+      ps = package_size.to_f
+      ps > 0 ? "[#{(quantity_on_hand / ps).floor} × #{ps.to_i}ml available]" : "[#{quantity_on_hand.to_i}ml available]"
+    when "gram"
+      ps = package_size.to_f
+      ps > 0 ? "[#{(quantity_on_hand / ps).floor} × #{ps.to_i}g available]" : "[#{quantity_on_hand.to_i}g available]"
+    else
+      "[#{quantity_on_hand} available]"
+    end
   end
 
   private

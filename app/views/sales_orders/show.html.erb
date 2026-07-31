@@ -1,143 +1,330 @@
 <!-- app/views/sales_orders/show.html.erb -->
+<%
+  # Helper: format quantity per unit for this line item
+  def qty_display(item)
+    batch   = item.product_batch
+    product = batch.product
+    qty     = item.quantity
+
+    case product.unit.to_s
+    when "bag"   then "#{qty.to_i} bags"
+    when "piece" then "#{qty.to_i} pieces"
+    when "kg"
+      m = (qty / 40).to_i
+      k = (qty % 40).round(2)
+      "#{m} Maund #{k} KG"
+    when "ml"
+      ps = batch.package_size.to_f
+      ps > 0 ? "#{qty.to_i} × #{ps.to_i} ml" : "#{qty.to_i} ml"
+    when "gram"
+      ps = batch.package_size.to_f
+      ps > 0 ? "#{qty.to_i} × #{ps.to_i} g" : "#{qty.to_i} g"
+    else
+      qty.to_s
+    end
+  end
+
+  # Urdu quantity display for print
+  def qty_display_urdu(item)
+    batch   = item.product_batch
+    product = batch.product
+    qty     = item.quantity
+
+    case product.unit.to_s
+    when "bag"   then "#{qty.to_i} بوری"
+    when "piece" then "#{qty.to_i} عدد"
+    when "kg"
+      m = (qty / 40).to_i
+      k = (qty % 40).round(2)
+      "#{m} من #{k} کلو"
+    when "ml"
+      ps = batch.package_size.to_f
+      ps > 0 ? "#{qty.to_i} × #{ps.to_i} ملی لٹر" : "#{qty.to_i} ملی لٹر"
+    when "gram"
+      ps = batch.package_size.to_f
+      ps > 0 ? "#{qty.to_i} × #{ps.to_i} گرام" : "#{qty.to_i} گرام"
+    else
+      qty.to_s
+    end
+  end
+
+  line_items = @sales_order.sales_line_items.includes(product_batch: :product)
+%>
+
 <div class="space-y-6 p-6 print:p-0 print:space-y-0">
-  
-  <!-- Navigation Controls (Hidden during physical paper print actions) -->
+
+  <!-- Nav Controls (screen only) -->
   <div class="flex items-center justify-between print:hidden">
-    <%= link_to "← Back to Sales Orders", sales_orders_path, class: "text-sm text-gray-500 hover:text-gray-700 font-medium transition" %>
-    <div class="flex items-center space-x-3">
-      <button onclick="window.print();" class="text-xs font-bold bg-emerald-600 text-white px-3 py-1.5 rounded border border-emerald-700 hover:bg-emerald-700 transition cursor-pointer">
+    <%= link_to "← Back to Sales Orders", sales_orders_path,
+          class: "text-sm text-gray-500 hover:text-gray-700 font-medium transition" %>
+    <div class="flex items-center gap-3">
+      <button onclick="window.print();"
+              class="text-xs font-bold bg-emerald-600 text-white px-3 py-1.5 rounded border border-emerald-700 hover:bg-emerald-700 transition cursor-pointer">
         Print Invoice / بل پرنٹ کریں
       </button>
-      <%= link_to "Modify Order", edit_sales_order_path(@sales_order), class: "text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1.5 rounded border border-blue-200 hover:bg-blue-100 transition" %>
+      <%= link_to "Modify Order", edit_sales_order_path(@sales_order),
+            class: "text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1.5 rounded border border-blue-200 hover:bg-blue-100 transition" %>
+      <%= button_to "Delete Order", sales_order_path(@sales_order),
+            method: :delete,
+            data: { turbo_confirm: "Delete this order? Inventory will be restored." },
+            class: "text-xs font-bold bg-red-50 text-red-600 px-3 py-1.5 rounded border border-red-200 hover:bg-red-100 transition cursor-pointer" %>
       <span class="text-xs text-gray-400 font-mono">ID: <%= @sales_order.id %></span>
     </div>
   </div>
 
-  <!-- Standard Screen View Block (Hidden on print) -->
-  <div class="bg-white shadow rounded-lg p-6 border border-gray-200 space-y-6 print:hidden">
-    <!-- Header Summary Block -->
-    <div class="border-b border-gray-100 pb-4 flex justify-between items-start">
-      <div>
-        <h1 class="text-2xl font-black text-gray-900 font-mono"><%= @sales_order.order_number %></h1>
-        <p class="text-sm text-gray-500 mt-1">Customer: <strong class="text-gray-800"><%= @sales_order.customer_name %></strong></p>
-      </div>
-      <div class="text-right">
-        <span class="text-xs text-gray-400 block font-medium uppercase tracking-wider">Processed Stamp</span>
-        <span class="text-sm text-gray-700 font-semibold"><%= @sales_order.placed_at.strftime("%B %d, %Y %H:%M") %></span>
-      </div>
-    </div>
+  <!-- ── SCREEN VIEW ─────────────────────────────────────────────── -->
+  <div class="print:hidden space-y-5">
 
-    <!-- Allocation Ledger Mapping -->
-    <div>
-      <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Allocated Line Items Manifest</h3>
-      <div class="overflow-hidden border border-gray-100 rounded-md">
-        <table class="min-w-full divide-y divide-gray-100 text-sm">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-2.5 text-left font-semibold text-gray-600">Product Name</th>
-              <th class="px-4 py-2.5 text-left font-semibold text-gray-600">Fulfillment Lot (Batch)</th>
-              <th class="px-4 py-2.5 text-right font-semibold text-gray-600">Quantity Ordered</th>
-              <th class="px-4 py-2.5 text-right font-semibold text-gray-600">Unit Price</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 bg-white text-gray-700">
-            <% grand_total = 0 %>
-            <% @sales_order.sales_line_items.includes(product_batch: :product).each do |item| %>
-              <% is_commodity = %w[seed oil_cake wanda].include?(item.product_batch.product.category.to_s) %>
-              <% line_total = item.quantity * item.unit_price %>
-              <% grand_total += line_total %>
-              <tr>
-                <td class="px-4 py-3 font-semibold text-gray-900">
-                  <%= item.product_batch.product.name %>
-                  <% if item.product_batch.product.respond_to?(:slug) && item.product_batch.product.slug.present? %>
-                    <span class="text-gray-400 font-normal">/ <%= item.product_batch.product.slug %></span>
-                  <% end %>
-                </td>
-                <td class="px-4 py-3 font-mono text-xs">
-                  <span class="bg-gray-100 text-gray-800 px-2 py-0.5 rounded">
-                    Lot: <%= item.product_batch.batch_number.presence || 'Loose Stock' %>
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-right font-medium"><%= item.quantity %> <%= is_commodity ? 'KGs' : 'bags' %></td>
-                <td class="px-4 py-3 text-right font-mono text-gray-500">Rs. <%= number_to_currency(item.unit_price, unit: "") %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- Header -->
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 class="text-2xl font-black text-gray-900 font-mono tracking-tight">
+            <%= @sales_order.order_number %>
+          </h1>
+          <p class="text-sm text-gray-500 mt-1">
+            Placed <%= @sales_order.placed_at.strftime("%B %d, %Y at %H:%M") %>
+          </p>
+        </div>
 
-    <!-- Grand Total Footer Section -->
-    <div class="flex justify-end pt-4 border-t border-gray-100">
-      <div class="w-64 space-y-1.5 text-right">
-        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Order Total</div>
-        <div class="text-xl font-black text-gray-950 tracking-tight font-mono">
-          Rs. <%= number_to_currency(grand_total, unit: "") %>
+        <!-- Customer info -->
+        <div class="text-right">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold uppercase
+            <%= @sales_order.farmer_customer? ? 'bg-green-100 text-green-700' :
+                @sales_order.trading_partner_customer? ? 'bg-blue-100 text-blue-700' :
+                'bg-gray-100 text-gray-600' %>">
+            <%= @sales_order.customer_type.humanize.gsub(" Customer", "") %>
+          </span>
+          <p class="text-lg font-bold text-gray-900 mt-1"><%= @sales_order.customer_name %></p>
+          <% if @sales_order.farmer_customer? && @sales_order.farmer.present? %>
+            <p class="text-xs text-gray-400 mt-0.5">
+              <%= link_to "View Farmer Khata →", farmer_path(@sales_order.farmer),
+                    class: "text-green-600 hover:underline" %>
+            </p>
+          <% elsif @sales_order.trading_partner_customer? && @sales_order.trading_partner.present? %>
+            <p class="text-xs text-gray-400 mt-0.5">
+              <%= link_to "View Partner Ledger →", trading_partner_path(@sales_order.trading_partner),
+                    class: "text-blue-600 hover:underline" %>
+            </p>
+          <% end %>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ==================================================================================== -->
-  <!-- CUSTOMER INVOICE PRINT VIEW LAYER (Hidden on Screen, visible entirely on Print layout) -->
-  <!-- ==================================================================================== -->
-  <div class="hidden print:block bg-white text-black p-4 w-full" dir="rtl">
-    
-    <!-- Print Header Section -->
-    <div class="border-b-2 border-black pb-4 flex justify-between items-start">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @sales_order.organization.name %></h1>
-        <p class="text-md font-bold text-gray-800 mt-1">کسٹمر کا نام: <span class="font-normal"><%= @sales_order.customer_name %></span></p>
+    <!-- Financial KPI cards -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Revenue</p>
+        <p class="text-xl font-black text-gray-900 font-mono">
+          Rs. <%= number_with_delimiter(@sales_order.total_revenue.round(2)) %>
+        </p>
       </div>
-      <div class="text-left">
-        <h2 class="text-xl font-bold font-mono text-gray-900">آرڈر نمبر: <%= @sales_order.order_number %></h2>
-        <p class="text-xs text-gray-600 mt-1 font-sans">تاریخ: <%= @sales_order.placed_at.strftime("%d/%m/%Y %H:%M") %></p>
+      <div class="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Cost of Goods</p>
+        <p class="text-xl font-black text-gray-700 font-mono">
+          Rs. <%= number_with_delimiter(@sales_order.total_cost.round(2)) %>
+        </p>
+      </div>
+      <div class="bg-white border border-<%= @sales_order.net_profit >= 0 ? 'emerald' : 'red' %>-200 rounded-lg p-4 text-center shadow-sm">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Net Profit</p>
+        <p class="text-xl font-black <%= @sales_order.net_profit >= 0 ? 'text-emerald-600' : 'text-red-600' %> font-mono">
+          Rs. <%= number_with_delimiter(@sales_order.net_profit.round(2)) %>
+        </p>
+        <% margin = @sales_order.total_revenue > 0 ? ((@sales_order.net_profit / @sales_order.total_revenue) * 100).round(1) : 0 %>
+        <p class="text-xs text-gray-400 mt-0.5"><%= margin %>% margin</p>
       </div>
     </div>
 
-    <!-- Items Table Block -->
-    <div class="mt-6">
+    <!-- Line Items -->
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+      <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
+        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Line Items</h3>
+      </div>
+
+      <table class="min-w-full divide-y divide-gray-100 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2.5 text-left font-semibold text-gray-600">Product</th>
+            <th class="px-4 py-2.5 text-left font-semibold text-gray-600">Batch / Lot</th>
+            <th class="px-4 py-2.5 text-left font-semibold text-gray-600">Expiry</th>
+            <th class="px-4 py-2.5 text-right font-semibold text-gray-600">Qty</th>
+            <th class="px-4 py-2.5 text-right font-semibold text-gray-600">Sale Price</th>
+            <th class="px-4 py-2.5 text-right font-semibold text-gray-600">Cost</th>
+            <th class="px-4 py-2.5 text-right font-semibold text-gray-600">Revenue</th>
+            <th class="px-4 py-2.5 text-right font-semibold text-gray-600">Profit</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 bg-white">
+          <% line_items.each do |item| %>
+            <% product = item.product_batch.product %>
+            <% batch   = item.product_batch %>
+            <% days_left = batch.expiry_date ? (batch.expiry_date - Date.current).to_i : nil %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3">
+                <p class="font-semibold text-gray-900"><%= product.name %></p>
+                <% if product.slug.present? %>
+                  <p class="text-xs text-gray-400" dir="rtl"
+                     style="font-family: 'Noto Nastaliq Urdu', serif;">
+                    <%= product.slug %>
+                  </p>
+                <% end %>
+                <span class="inline-flex mt-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded bg-gray-100 text-gray-500 uppercase">
+                  <%= product.category.humanize %>
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="font-mono text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
+                  <%= batch.batch_number.presence || "Open Stock" %>
+                </span>
+                <% if product.supplier.present? %>
+                  <p class="text-[10px] text-gray-400 mt-0.5"><%= product.supplier.name.titleize %></p>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-xs">
+                <% if batch.expiry_date %>
+                  <span class="<%= days_left && days_left < 0 ? 'text-red-600 font-bold' : days_left && days_left <= 30 ? 'text-amber-600 font-semibold' : 'text-gray-500' %>">
+                    <%= batch.expiry_date.strftime("%d %b %Y") %>
+                    <% if days_left %>
+                      <span class="block text-[10px]">
+                        <%= days_left < 0 ? "#{days_left.abs}d ago" : "#{days_left}d left" %>
+                      </span>
+                    <% end %>
+                  </span>
+                <% else %>
+                  <span class="text-gray-300">—</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-right font-medium text-gray-800">
+                <%= qty_display(item) %>
+              </td>
+              <td class="px-4 py-3 text-right font-mono text-gray-600">
+                Rs. <%= number_with_delimiter(item.unit_price.round(2)) %>
+              </td>
+              <td class="px-4 py-3 text-right font-mono text-gray-500 text-xs">
+                Rs. <%= number_with_delimiter(item.purchase_price_at_sale.round(2)) %>
+              </td>
+              <td class="px-4 py-3 text-right font-mono font-semibold text-gray-900">
+                Rs. <%= number_with_delimiter(item.line_revenue.round(2)) %>
+              </td>
+              <td class="px-4 py-3 text-right font-mono font-semibold <%= item.line_profit >= 0 ? 'text-emerald-600' : 'text-red-600' %>">
+                Rs. <%= number_with_delimiter(item.line_profit.round(2)) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+          <tr>
+            <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-700 text-right">Totals</td>
+            <td class="px-4 py-3 text-right font-black text-gray-900 font-mono">
+              Rs. <%= number_with_delimiter(@sales_order.total_revenue.round(2)) %>
+            </td>
+            <td class="px-4 py-3 text-right font-black font-mono <%= @sales_order.net_profit >= 0 ? 'text-emerald-600' : 'text-red-600' %>">
+              Rs. <%= number_with_delimiter(@sales_order.net_profit.round(2)) %>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Ledger note -->
+    <% khata_txn = KhataTransaction.find_by(sourceable: @sales_order) %>
+    <% tp_ledger = TradingPartnerLedger.find_by(sourceable: @sales_order) %>
+    <% if khata_txn || tp_ledger %>
+      <div class="bg-blue-50 border border-blue-100 rounded-lg px-5 py-3 flex items-center gap-3">
+        <svg class="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/>
+        </svg>
+        <p class="text-xs text-blue-700 font-medium">
+          <% if khata_txn %>
+            This sale was posted as a <strong>debit of Rs. <%= number_with_delimiter(khata_txn.amount.round(2)) %></strong>
+            to <%= @sales_order.farmer.full_name %>'s Khata.
+            <%= link_to "View Khata →", farmer_path(@sales_order.farmer), class: "underline hover:text-blue-900" %>
+          <% elsif tp_ledger %>
+            This sale was posted as a <strong>debit of Rs. <%= number_with_delimiter(tp_ledger.amount.round(2)) %></strong>
+            to <%= @sales_order.trading_partner.business_name.titleize %>'s ledger.
+            <%= link_to "View Ledger →", trading_partner_path(@sales_order.trading_partner), class: "underline hover:text-blue-900" %>
+          <% end %>
+        </p>
+      </div>
+    <% end %>
+
+  </div>
+
+  <!-- ── PRINT VIEW (RTL Urdu) ───────────────────────────────────── -->
+  <div class="hidden print:block bg-white text-black p-4 w-full" dir="rtl">
+
+    <!-- Print Header -->
+    <div class="border-b-2 border-black pb-4 flex justify-between items-start">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900">
+          <%= @sales_order.organization.urdu_name.presence || @sales_order.organization.name %>
+        </h1>
+        <p class="text-sm font-bold text-gray-800 mt-1">
+          کسٹمر: <span class="font-normal"><%= @sales_order.customer_name %></span>
+        </p>
+        <% if @sales_order.farmer_customer? %>
+          <p class="text-xs text-gray-500">قسم: کسان (ادھار)</p>
+        <% elsif @sales_order.trading_partner_customer? %>
+          <p class="text-xs text-gray-500">قسم: تجارتی شراکت دار</p>
+        <% else %>
+          <p class="text-xs text-gray-500">قسم: نقد گاہک</p>
+        <% end %>
+      </div>
+      <div class="text-left">
+        <h2 class="text-lg font-bold font-mono text-gray-900">
+          آرڈر نمبر: <%= @sales_order.order_number %>
+        </h2>
+        <p class="text-xs text-gray-600 mt-1">
+          تاریخ: <%= @sales_order.placed_at.strftime("%d/%m/%Y %H:%M") %>
+        </p>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="mt-4">
       <table class="min-w-full text-sm border-collapse border border-gray-300">
         <thead class="bg-gray-100">
           <tr class="border-b border-gray-300">
             <th class="px-3 py-2 text-right font-bold text-gray-800 border-r border-gray-300">آئٹم / تفصیلات</th>
             <th class="px-3 py-2 text-center font-bold text-gray-800 border-r border-gray-300">بیچ نمبر</th>
-            <th class="px-3 py-2 text-left font-bold text-gray-800 border-r border-gray-300">مقدار (تعداد)</th>
+            <th class="px-3 py-2 text-center font-bold text-gray-800 border-r border-gray-300">میعاد ختم</th>
+            <th class="px-3 py-2 text-left font-bold text-gray-800 border-r border-gray-300">مقدار</th>
             <th class="px-3 py-2 text-left font-bold text-gray-800 border-r border-gray-300">قیمت فی یونٹ</th>
-            <th class="px-3 py-2 text-left font-bold text-gray-800">کل قیمت</th>
+            <th class="px-3 py-2 text-left font-bold text-gray-800">کل</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-300 bg-white">
           <% print_grand_total = 0 %>
-          <% @sales_order.sales_line_items.includes(product_batch: :product).each do |item| %>
-            <% is_commodity = %w[seed oil_cake wanda].include?(item.product_batch.product.category.to_s) %>
+          <% line_items.each do |item| %>
+            <% product    = item.product_batch.product %>
+            <% batch      = item.product_batch %>
             <% line_total = item.quantity * item.unit_price %>
             <% print_grand_total += line_total %>
             <tr class="border-b border-gray-300">
-              <!-- Item Name / Urdu Slug Isolation -->
-              <td class="px-3 py-2 text-right font-semibold text-gray-900 border-r border-gray-300">
-                <% if item.product_batch.product.respond_to?(:slug) && item.product_batch.product.slug.present? %>
-                  <span class="font-bold text-base font-sans"><%= item.product_batch.product.slug %></span>
-                  <span class="text-xs text-gray-500 font-normal mr-1">(<%= item.product_batch.product.name %>)</span>
+              <td class="px-3 py-2 text-right font-semibold border-r border-gray-300">
+                <% if product.slug.present? %>
+                  <span class="font-bold text-base" style="font-family: 'Noto Nastaliq Urdu', serif;">
+                    <%= product.slug %>
+                  </span>
+                  <span class="text-xs text-gray-500 font-normal mr-1">(<%= product.name %>)</span>
                 <% else %>
-                  <span><%= item.product_batch.product.name %></span>
+                  <%= product.name %>
                 <% end %>
               </td>
-              <!-- Lot Batch Details -->
-              <td class="px-3 py-2 text-center font-mono text-xs text-gray-700 border-r border-gray-300">
-                <%= item.product_batch.batch_number.presence || 'اوپن سٹاک' %>
+              <td class="px-3 py-2 text-center font-mono text-xs border-r border-gray-300">
+                <%= batch.batch_number.presence || "اوپن سٹاک" %>
               </td>
-              <!-- Quantity Details with dynamic weight handling -->
+              <td class="px-3 py-2 text-center text-xs border-r border-gray-300">
+                <%= batch.expiry_date&.strftime("%d/%m/%Y") || "—" %>
+              </td>
               <td class="px-3 py-2 text-left font-medium border-r border-gray-300">
-                <%= item.quantity %> <%= is_commodity ? 'کلو گرام (KG)' : 'بوری (Bags)' %>
+                <%= qty_display_urdu(item) %>
               </td>
-              <!-- Cost metrics per units -->
               <td class="px-3 py-2 text-left font-mono text-gray-600 border-r border-gray-300">
-                Rs. <%= number_to_currency(item.unit_price, unit: "") %>
+                Rs. <%= number_with_delimiter(item.unit_price.round(2)) %>
               </td>
-              <!-- Subtotals summary line -->
               <td class="px-3 py-2 text-left font-bold font-mono">
-                Rs. <%= number_to_currency(line_total, unit: "") %>
+                Rs. <%= number_with_delimiter(line_total.round(2)) %>
               </td>
             </tr>
           <% end %>
@@ -145,20 +332,21 @@
       </table>
     </div>
 
-    <!-- Print Grand Summary Footer -->
+    <!-- Print Grand Total -->
     <div class="mt-4 flex justify-start">
-      <div class="w-64 border border-black p-3 rounded bg-gray-50 text-left">
-        <div class="text-xs font-bold text-gray-500 text-right mb-1">کل قابلِ ادائیگی رقم (Grand Total):</div>
+      <div class="border-2 border-black p-3 rounded bg-gray-50 text-left min-w-48">
+        <div class="text-xs font-bold text-gray-600 text-right mb-1">کل قابلِ ادائیگی رقم:</div>
         <div class="text-2xl font-black text-gray-950 font-mono">
-          Rs. <%= number_to_currency(print_grand_total, unit: "") %>
+          Rs. <%= number_with_delimiter(print_grand_total.round(2)) %>
         </div>
       </div>
     </div>
 
-    <!-- Print Footer Disclaimer Stamp -->
-    <div class="mt-12 text-center text-xs text-gray-400 border-t border-dashed border-gray-300 pt-4">
-      کمپیوٹر سے تیار کردہ رسید - دستخط کی ضرورت نہیں ہے۔ تشریف آوری کا شکریہ!
+    <!-- Print Footer -->
+    <div class="mt-10 text-center text-xs text-gray-400 border-t border-dashed border-gray-300 pt-4">
+      کمپیوٹر سے تیار کردہ رسید — دستخط کی ضرورت نہیں ہے۔ تشریف آوری کا شکریہ!
     </div>
+
   </div>
 
 </div>
