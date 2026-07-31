@@ -40,11 +40,17 @@
         <% end %>
 
         <div>
-          <%# We use the is_submit: true flag so the component renders as a button element %>
           <%= f.button type: "submit", class: "w-full p-0 border-none bg-transparent cursor-pointer" do %>
             <%= custom_button(color: "primary", is_submit: true, full_width: true) { "Sign In" } %>
           <% end %>
         </div>
+
+        <% if devise_mapping.recoverable? %>
+          <div class="text-center">
+            <%= link_to "Forgot your password?", new_user_password_path,
+                  class: "text-sm text-emerald-600 hover:text-emerald-800 font-medium" %>
+          </div>
+        <% end %>
       <% end %>
     </div>
   </div>
