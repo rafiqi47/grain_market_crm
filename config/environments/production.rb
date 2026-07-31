@@ -60,17 +60,12 @@ Rails.application.configure do
     protocol: "https"
   }
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via rails credentials:edit.
+  # Send email via Resend's HTTP API instead of SMTP.
+  # Render's free tier blocks outbound SMTP ports (25, 465, 587), so we use
+  # Resend's HTTPS API (port 443) instead - see config/initializers/resend.rb
+  # for where RESEND_API_KEY is read.
   config.action_mailer.raise_delivery_errors = true
-  config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = {
-    address: "smtp.resend.com",
-    port: 587,
-    user_name: "resend",
-    password: ENV.fetch("RESEND_API_KEY"),
-    authentication: :plain,
-    enable_starttls_auto: true
-  }
+  config.action_mailer.delivery_method = :resend
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
