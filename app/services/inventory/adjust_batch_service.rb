@@ -24,7 +24,7 @@ module Inventory
 
       ActiveRecord::Base.transaction do
         if @batch.purchase_order.present?
-          adjust_via_purchase_order(supplier, new_value, difference)
+          adjust_via_purchase_order(supplier, difference)
         else
           post_adjustment_entry(supplier, difference)
         end
@@ -41,39 +41,33 @@ module Inventory
 
     private
 
-    # def adjust_via_purchase_order(supplier, new_value, difference)
-    #   po = @batch.purchase_order
-
-    #   new_credit = [po.amount_on_credit + difference, 0].max
-    #   po.update!(
-    #     total_amount:     new_value,
-    #     amount_on_credit: new_credit
-    #   )
-
-    #   ledger_entry = supplier.supplier_ledgers.find_by(purchase_order: po)
-    #   if ledger_entry
-    #     ledger_entry.update_column(:amount, new_value)
-    #   end
-
-    #   supplier.recalculate_ledger_balances!
-    # end
-    def adjust_via_purchase_order(supplier, new_value, difference)
+    # Delta-based: adds `difference` to whatever the PO's current totals are,
+    # rather than overwriting them outright. This makes it safe to call this
+    # service more than once against the same batch/PO within a single update
+    # (e.g. once for a quantity_on_hand + price change, and once more for an
+    # initial_quantity change) — each call just layers its own delta on top
+    # instead of clobbering the previous call's result.
+    def adjust_via_purchase_order(supplier, difference)
       po = @batch.purchase_order
 
-      # Cap amount_paid at new_value — can't have paid more than the total
-      new_amount_paid   = [po.amount_paid.to_f, new_value].min.round(2)
-      new_amount_credit = (new_value - new_amount_paid).round(2)
+      new_total_amount = (po.total_amount.to_f + difference).round(2)
+
+      # Cap amount_paid at the new total — can't have paid more than the total
+      new_amount_paid   = [po.amount_paid.to_f, new_total_amount].min.round(2)
+      new_amount_credit = (new_total_amount - new_amount_paid).round(2)
 
       # update_columns bypasses financials_must_balance validation intentionally
       # — this is a programmatic correction, not user input
       po.update_columns(
-        total_amount:     new_value.round(2),
+        total_amount:     new_total_amount,
         amount_paid:      new_amount_paid,
         amount_on_credit: new_amount_credit
       )
 
       ledger_entry = supplier.supplier_ledgers.find_by(purchase_order: po)
-      ledger_entry&.update_column(:amount, new_value.round(2))
+      if ledger_entry
+        ledger_entry.update_column(:amount, (ledger_entry.amount.to_f + difference).round(2))
+      end
 
       supplier.recalculate_ledger_balances!
     end

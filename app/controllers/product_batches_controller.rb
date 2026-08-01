@@ -87,8 +87,9 @@ class ProductBatchesController < ApplicationController
   def update
     unit = @product.unit.to_s
 
-    old_quantity = @product_batch.quantity_on_hand
-    old_price    = @product_batch.purchase_price_per_unit
+    old_initial_quantity = @product_batch.initial_quantity
+    old_quantity          = @product_batch.quantity_on_hand
+    old_price             = @product_batch.purchase_price_per_unit
 
     update_attrs = {
       batch_number:     params[:product_batch][:batch_number].presence,
@@ -98,6 +99,12 @@ class ProductBatchesController < ApplicationController
 
     case unit
     when "kg"
+      if params[:product_batch][:initial_quantity_maund].present? || params[:product_batch][:initial_quantity_kg].present?
+        init_maund = params[:product_batch][:initial_quantity_maund].to_f
+        init_kg    = params[:product_batch][:initial_quantity_kg].to_f
+        update_attrs[:initial_quantity] = init_maund * 40 + init_kg
+      end
+
       maund    = params[:product_batch][:quantity_maund].to_f
       kg       = params[:product_batch][:quantity_kg].to_f
       total_kg = maund * 40 + kg
@@ -107,9 +114,14 @@ class ProductBatchesController < ApplicationController
         purchase_price_per_unit: ppm > 0 ? ppm / 40.0 : 0
       )
     when "ml", "gram"
-      pc       = params[:product_batch][:packet_count].to_f
-      ps       = params[:product_batch][:package_size].to_f
-      ppp      = params[:product_batch][:price_per_packet].to_f
+      ps = params[:product_batch][:package_size].to_f
+
+      if params[:product_batch][:initial_packet_count].present?
+        update_attrs[:initial_quantity] = params[:product_batch][:initial_packet_count].to_f * ps
+      end
+
+      pc        = params[:product_batch][:packet_count].to_f
+      ppp       = params[:product_batch][:price_per_packet].to_f
       total_qty = pc * ps
       update_attrs.merge!(
         quantity_on_hand:        total_qty,
@@ -118,16 +130,18 @@ class ProductBatchesController < ApplicationController
       )
     else
       update_attrs.merge!(
+        initial_quantity:        params[:product_batch][:initial_quantity].to_f,
         quantity_on_hand:        params[:product_batch][:quantity_on_hand].to_f,
         purchase_price_per_unit: params[:product_batch][:purchase_price_per_unit].to_f
       )
     end
 
-    new_quantity = update_attrs[:quantity_on_hand]
-    new_price    = update_attrs[:purchase_price_per_unit]
+    new_initial_quantity = update_attrs.key?(:initial_quantity) ? update_attrs[:initial_quantity] : old_initial_quantity
+    new_quantity          = update_attrs[:quantity_on_hand]
+    new_price             = update_attrs[:purchase_price_per_unit]
 
     if @product_batch.update(update_attrs)
-      if new_quantity != old_quantity || new_price != old_price
+      if new_quantity != old_quantity || new_price != old_price || new_initial_quantity != old_initial_quantity
         service = Inventory::AdjustBatchService.new(
           batch:        @product_batch,
           old_quantity: old_quantity,
@@ -147,33 +161,48 @@ class ProductBatchesController < ApplicationController
       end
     else
       respond_to do |format|
-        format.turbo_stream { render :edit, status: :unprocessable_entity }
+        format.turbo_stream { render :edit, formats: [:html], status: :unprocessable_entity }
         format.html { render :edit, status: :unprocessable_entity }
       end
     end
   end
 
   def destroy
-    old_quantity = @product_batch.quantity_on_hand
-    old_price    = @product_batch.purchase_price_per_unit
-
-    @product_batch.destroy
-
-    service = Inventory::AdjustBatchService.new(
-      batch:        @product_batch,
-      old_quantity: old_quantity,
-      old_price:    old_price,
-      new_quantity: 0,
-      new_price:    0,
-      organization: current_user.organization
-    )
-    unless service.call
-      flash.now[:alert] = "Batch removed but ledger adjustment failed: #{service.errors.join(', ')}"
+    if @product_batch.sales_line_items.exists?
+      respond_to do |format|
+        format.turbo_stream { flash.now[:alert] = "Can't delete a batch that has recorded sales. Adjust quantity instead." }
+        format.html { redirect_to dashboard_path, alert: "Can't delete a batch that has recorded sales." }
+      end
+      return
     end
 
-    respond_to do |format|
-      format.turbo_stream { flash.now[:notice] = "Batch removed and ledger adjusted." }
-      format.html { redirect_to dashboard_path, notice: "Batch removed." }
+    old_initial_quantity = @product_batch.initial_quantity
+    old_price             = @product_batch.purchase_price_per_unit
+
+    ActiveRecord::Base.transaction do
+      @product_batch.destroy!
+
+      service = Inventory::AdjustBatchService.new(
+        batch:        @product_batch,
+        old_quantity: old_initial_quantity,
+        old_price:    old_price,
+        new_quantity: 0,
+        new_price:    0,
+        organization: current_user.organization
+      )
+      raise ActiveRecord::Rollback unless service.call
+    end
+
+    if @product_batch.destroyed?
+      respond_to do |format|
+        format.turbo_stream { flash.now[:notice] = "Batch removed and ledger adjusted." }
+        format.html { redirect_to dashboard_path, notice: "Batch removed." }
+      end
+    else
+      respond_to do |format|
+        format.turbo_stream { flash.now[:alert] = "Batch removal failed — ledger adjustment could not be completed." }
+        format.html { redirect_to dashboard_path, alert: "Batch removal failed." }
+      end
     end
   end
 

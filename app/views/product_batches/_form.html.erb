@@ -10,106 +10,169 @@
   # Derive display values for edit forms
   if !is_new
     if is_kg
-      edit_maund  = product_batch.quantity_on_hand ? (product_batch.quantity_on_hand / 40).to_i : 0
-      edit_kg     = product_batch.quantity_on_hand ? (product_batch.quantity_on_hand % 40).round(2) : 0
-      edit_price  = product_batch.purchase_price_per_unit ? (product_batch.purchase_price_per_unit * 40).round(2) : 0
+      edit_maund         = product_batch.quantity_on_hand ? (product_batch.quantity_on_hand / 40).to_i : 0
+      edit_kg            = product_batch.quantity_on_hand ? (product_batch.quantity_on_hand % 40).round(2) : 0
+      edit_initial_maund = product_batch.initial_quantity ? (product_batch.initial_quantity / 40).to_i : 0
+      edit_initial_kg    = product_batch.initial_quantity ? (product_batch.initial_quantity % 40).round(2) : 0
+      edit_price         = product_batch.purchase_price_per_unit ? (product_batch.purchase_price_per_unit * 40).round(2) : 0
     elsif is_packet
-      ps           = product_batch.package_size.to_f
-      edit_count   = (ps > 0 && product_batch.quantity_on_hand) ? (product_batch.quantity_on_hand / ps).to_i : 0
-      edit_ps      = ps > 0 ? ps : nil
-      edit_price   = (ps > 0 && product_batch.purchase_price_per_unit) ? (product_batch.purchase_price_per_unit * ps).round(2) : 0
+      ps                 = product_batch.package_size.to_f
+      edit_count         = (ps > 0 && product_batch.quantity_on_hand) ? (product_batch.quantity_on_hand / ps).to_i : 0
+      edit_initial_count = (ps > 0 && product_batch.initial_quantity) ? (product_batch.initial_quantity / ps).to_i : 0
+      edit_ps            = ps > 0 ? ps : nil
+      edit_price         = (ps > 0 && product_batch.purchase_price_per_unit) ? (product_batch.purchase_price_per_unit * ps).round(2) : 0
     end
   end
+
+  input_classes = "block w-full h-10 px-3 rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1"
+  label_classes = "block text-xs font-medium text-gray-500 mb-1"
 %>
 
-<%= form_with(model: [product, product_batch], class: "space-y-4") do |f| %>
+<%= form_with(model: [product, product_batch], class: "space-y-5") do |f| %>
   <% if product_batch.errors.any? %>
-    <div class="bg-red-50 text-red-700 p-3 rounded text-xs">
+    <div class="bg-red-50 border border-red-100 text-red-700 px-3 py-2.5 rounded-md text-sm">
       <%= product_batch.errors.full_messages.to_sentence %>
     </div>
   <% end %>
 
-  <div class="grid grid-cols-2 gap-4">
+  <!-- Batch Number -->
+  <div>
+    <%= f.label :batch_number,
+          is_commodity ? "Lot / Batch # (Optional)" : "Lot / Batch #",
+          class: label_classes %>
+    <%= f.text_field :batch_number,
+          placeholder: is_commodity ? "e.g., Loose Stock" : "e.g. DAP-001",
+          class: input_classes,
+          required: !is_commodity %>
+  </div>
 
-    <!-- Batch Number -->
-    <div>
-      <%= f.label :batch_number,
-            is_commodity ? "Lot / Batch # (Optional)" : "Lot / Batch #",
-            class: "block text-xs font-semibold text-gray-600 uppercase" %>
-      <%= f.text_field :batch_number,
-            placeholder: is_commodity ? "e.g., Loose Stock" : "e.g. DAP-001",
-            class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm",
-            required: !is_commodity %>
-    </div>
+  <!-- Quantity -->
+  <div class="rounded-lg border border-gray-200 p-4">
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+      <%= is_new ? "Quantity" : "Quantity — Initial vs. Current" %>
+    </p>
 
     <!-- COUNT (bag / piece) -->
     <% if is_count %>
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 uppercase">
-          <%= is_new ? "Initial #{unit_label.capitalize} Count" : "#{unit_label.capitalize} on Hand" %>
-        </label>
-        <%= f.number_field(is_new ? :initial_quantity : :quantity_on_hand,
-              min: 0, step: 1, id: "batch_initial_qty",
-              class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm",
-              required: true) %>
-      </div>
+      <% if is_new %>
+        <div>
+          <label class="<%= label_classes %>"><%= unit_label.capitalize %> Count</label>
+          <%= f.number_field :initial_quantity,
+                min: 0, step: 1, id: "batch_initial_qty",
+                class: input_classes, required: true %>
+        </div>
+      <% else %>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="<%= label_classes %>">Initial</label>
+            <%= f.number_field :initial_quantity,
+                  min: 0, step: 1,
+                  class: input_classes, required: true %>
+          </div>
+          <div>
+            <label class="<%= label_classes %>">On Hand</label>
+            <%= f.number_field :quantity_on_hand,
+                  min: 0, step: 1, id: "batch_initial_qty",
+                  class: input_classes, required: true %>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2"><%= unit_label.capitalize %></p>
+      <% end %>
 
     <!-- KG (oil_cake / seed / wanda) -->
     <% elsif is_kg %>
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 uppercase">
-          <%= is_new ? "Initial Weight" : "Weight on Hand" %>
-        </label>
-        <div class="grid grid-cols-2 gap-2 mt-1">
+      <% if is_new %>
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-[10px] text-gray-400 mb-0.5">Maund</label>
-            <input type="number"
-                   name="product_batch[quantity_maund]"
-                   id="batch_initial_qty"
-                   value="<%= is_new ? nil : edit_maund %>"
-                   min="0" step="1"
-                   class="block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                   required>
+            <label class="<%= label_classes %>">Maund</label>
+            <input type="number" name="product_batch[quantity_maund]" id="batch_initial_qty"
+                   value="" min="0" step="1" class="<%= input_classes %>" required>
           </div>
           <div>
-            <label class="block text-[10px] text-gray-400 mb-0.5">KG</label>
-            <input type="number"
-                   name="product_batch[quantity_kg]"
-                   value="<%= is_new ? nil : edit_kg %>"
-                   min="0" max="39.99" step="0.01"
-                   class="block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+            <label class="<%= label_classes %>">KG</label>
+            <input type="number" name="product_batch[quantity_kg]"
+                   value="" min="0" max="39.99" step="0.01" class="<%= input_classes %>">
           </div>
         </div>
-      </div>
+      <% else %>
+        <div class="space-y-3">
+          <div>
+            <p class="text-[11px] font-medium text-gray-400 mb-1.5">Initial</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="<%= label_classes %>">Maund</label>
+                <input type="number" name="product_batch[initial_quantity_maund]"
+                       value="<%= edit_initial_maund %>" min="0" step="1"
+                       class="<%= input_classes %>" required>
+              </div>
+              <div>
+                <label class="<%= label_classes %>">KG</label>
+                <input type="number" name="product_batch[initial_quantity_kg]"
+                       value="<%= edit_initial_kg %>" min="0" max="39.99" step="0.01"
+                       class="<%= input_classes %>">
+              </div>
+            </div>
+          </div>
+          <div class="pt-3 border-t border-gray-100">
+            <p class="text-[11px] font-medium text-gray-400 mb-1.5">On Hand</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="<%= label_classes %>">Maund</label>
+                <input type="number" name="product_batch[quantity_maund]" id="batch_initial_qty"
+                       value="<%= edit_maund %>" min="0" step="1"
+                       class="<%= input_classes %>" required>
+              </div>
+              <div>
+                <label class="<%= label_classes %>">KG</label>
+                <input type="number" name="product_batch[quantity_kg]"
+                       value="<%= edit_kg %>" min="0" max="39.99" step="0.01"
+                       class="<%= input_classes %>">
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
 
     <!-- PACKET (ml / gram) -->
     <% elsif is_packet %>
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 uppercase">
-          <%= is_new ? "Initial Stock" : "Current Stock" %>
-        </label>
-        <div class="grid grid-cols-2 gap-2 mt-1">
+      <% if is_new %>
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-[10px] text-gray-400 mb-0.5">Packet Count</label>
-            <input type="number"
-                   name="product_batch[packet_count]"
-                   id="batch_initial_qty"
-                   value="<%= is_new ? nil : edit_count %>"
-                   min="0" step="1"
-                   class="block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                   required>
+            <label class="<%= label_classes %>">Packet Count</label>
+            <input type="number" name="product_batch[packet_count]" id="batch_initial_qty"
+                   value="" min="0" step="1" class="<%= input_classes %>" required>
           </div>
           <div>
-            <label class="block text-[10px] text-gray-400 mb-0.5">Size per packet (<%= unit_label %>)</label>
-            <input type="number"
-                   name="product_batch[package_size]"
-                   value="<%= is_new ? nil : edit_ps %>"
-                   min="0.01" step="0.01"
-                   class="block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                   required>
+            <label class="<%= label_classes %>">Size per packet (<%= unit_label %>)</label>
+            <input type="number" name="product_batch[package_size]"
+                   value="" min="0.01" step="0.01" class="<%= input_classes %>" required>
           </div>
         </div>
-      </div>
+      <% else %>
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <p class="text-[11px] font-medium text-gray-400 mb-1.5">Initial</p>
+              <input type="number" name="product_batch[initial_packet_count]"
+                     value="<%= edit_initial_count %>" min="0" step="1"
+                     class="<%= input_classes %>" required>
+            </div>
+            <div>
+              <p class="text-[11px] font-medium text-gray-400 mb-1.5">On Hand</p>
+              <input type="number" name="product_batch[packet_count]" id="batch_initial_qty"
+                     value="<%= edit_count %>" min="0" step="1"
+                     class="<%= input_classes %>" required>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400">Packets</p>
+          <div class="pt-3 border-t border-gray-100">
+            <label class="<%= label_classes %>">Size per packet (<%= unit_label %>)</label>
+            <input type="number" name="product_batch[package_size]"
+                   value="<%= edit_ps %>" min="0.01" step="0.01"
+                   class="<%= input_classes %>" required>
+          </div>
+        </div>
+      <% end %>
     <% end %>
   </div>
 
@@ -125,43 +188,37 @@
       else              "Purchase Price"
       end
     %>
-    <label class="block text-xs font-semibold text-gray-600 uppercase"><%= price_label %></label>
+    <label class="<%= label_classes %>"><%= price_label %></label>
 
     <% if is_kg %>
       <input type="number" name="product_batch[price_per_maund]"
              id="batch_unit_cost"
              value="<%= is_new ? nil : edit_price %>"
-             min="0" step="0.01"
-             class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-             required>
+             min="0" step="0.01" class="<%= input_classes %>" required>
     <% elsif is_packet %>
       <input type="number" name="product_batch[price_per_packet]"
              id="batch_unit_cost"
              value="<%= is_new ? nil : edit_price %>"
-             min="0" step="0.01"
-             class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-             required>
+             min="0" step="0.01" class="<%= input_classes %>" required>
     <% else %>
       <%= f.number_field :purchase_price_per_unit,
             step: "0.01", min: "0", id: "batch_unit_cost",
-            class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm",
-            required: true %>
+            class: input_classes, required: true %>
     <% end %>
   </div>
 
   <!-- Financial section — new record only -->
   <% if is_new %>
-    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
-      <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Financial Agreement</span>
+    <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 space-y-3">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Financial Agreement</p>
       <div>
-        <label class="block text-xs font-semibold text-gray-600 uppercase">Amount Paid Upfront (Rs.)</label>
+        <label class="<%= label_classes %>">Amount Paid Upfront (Rs.)</label>
         <input type="number" name="financials[amount_paid]" id="batch_amount_paid"
-               value="0" min="0" step="0.01"
-               class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+               value="0" min="0" step="0.01" class="<%= input_classes %> bg-white">
       </div>
-      <div class="pt-1 border-t border-slate-200 flex justify-between text-xs text-gray-500 font-medium">
-        <span>Estimated Total Value:</span>
-        <span id="calculated_total_cost" class="font-bold text-gray-900 font-mono">Rs. 0</span>
+      <div class="flex justify-between items-center pt-3 border-t border-slate-200">
+        <span class="text-xs font-medium text-gray-500">Estimated Total Value</span>
+        <span id="calculated_total_cost" class="font-mono font-semibold text-gray-900">Rs. 0</span>
       </div>
     </div>
 
@@ -205,24 +262,22 @@
   <!-- Dates -->
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <%= f.label :manufacture_date, "Mfg Date (Optional)", class: "block text-xs font-semibold text-gray-600 uppercase" %>
-      <%= f.date_field :manufacture_date, class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" %>
+      <%= f.label :manufacture_date, "Mfg Date (Optional)", class: label_classes %>
+      <%= f.date_field :manufacture_date, class: input_classes %>
     </div>
     <div>
       <%= f.label :expiry_date, is_commodity ? "Expiry Date (Optional)" : "Expiry Date",
-            class: "block text-xs font-semibold text-gray-600 uppercase" %>
-      <%= f.date_field :expiry_date,
-            class: "mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm",
-            required: !is_commodity %>
+            class: label_classes %>
+      <%= f.date_field :expiry_date, class: input_classes, required: !is_commodity %>
     </div>
   </div>
 
-  <div class="flex justify-end gap-2 pt-2">
+  <div class="flex justify-end gap-2 pt-1">
     <button type="button"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer"
             onclick="let frame = this.closest('turbo-frame'); if(frame) { frame.src = ''; frame.innerHTML = ''; }">
       Cancel
     </button>
-    <%= f.submit submit_label, class: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 cursor-pointer" %>
+    <%= f.submit submit_label, class: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 cursor-pointer" %>
   </div>
 <% end %>

@@ -16,6 +16,7 @@ class ProductBatch < ApplicationRecord
   validates :quantity_on_hand,       numericality: { greater_than_or_equal_to: 0 }
   validates :purchase_price_per_unit, numericality: { greater_than_or_equal_to: 0 }
   validate  :expiry_cannot_be_before_manufacture
+  validate :initial_quantity_not_less_than_quantity_on_hand
 
   scope :active,          -> { where("quantity_on_hand > 0") }
   scope :expiring_within, ->(days) { where(expiry_date: Date.current..days.days.from_now.to_date) }
@@ -117,6 +118,14 @@ class ProductBatch < ApplicationRecord
     return if expiry_date.blank?
     if manufacture_date.present? && expiry_date < manufacture_date
       errors.add(:expiry_date, "cannot be prior to the manufacture date")
+    end
+  end
+
+  def initial_quantity_not_less_than_quantity_on_hand
+    return if initial_quantity.blank? || quantity_on_hand.blank?
+
+    if initial_quantity < quantity_on_hand
+      errors.add(:initial_quantity, "can't be less than quantity on hand")
     end
   end
 end

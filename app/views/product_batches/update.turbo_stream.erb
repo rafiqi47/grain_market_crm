@@ -1,4 +1,6 @@
+<%# app/views/product_batches/update.turbo_stream.erb %>
 <%= turbo_stream.replace "modal", turbo_frame_tag("modal") %>
+
 <%= turbo_stream.replace "flash-container", render(partial: "layouts/flash") %>
 
 <% if @product.supplier_id.present? %>
