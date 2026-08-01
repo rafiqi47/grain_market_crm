@@ -85,9 +85,10 @@
                       <% kg = (total_kg % 40).round(2) %>
                       <%= maund %>M <%= kg %>KG
                     <% else %>
-                      <%= product.total_quantity_on_hand %> bags
+                      <%= product.display_total_quantity_on_hand.html_safe%>
                     <% end %>
                   </td>
+                  
                 </tr>
                 <!-- Detail frame injected below each product row -->
                 <tr>

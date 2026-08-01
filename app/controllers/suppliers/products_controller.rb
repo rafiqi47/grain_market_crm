@@ -2,7 +2,7 @@
 class Suppliers::ProductsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_supplier
-  before_action :set_product, only: [:show, :edit, :update, :batches_for_adjustment]
+  before_action :set_product, only: [:show, :edit, :update, :destroy, :batches_for_adjustment]
 
   def show
     @product_batches = @product.product_batches.order(created_at: :desc)
@@ -70,6 +70,19 @@ class Suppliers::ProductsController < ApplicationController
         errors:  @product.errors.full_messages
       }, status: :unprocessable_entity
     end
+  end
+
+  def destroy
+    if @product.product_batches.any?
+      redirect_to supplier_path(@supplier),
+        alert: "Cannot delete #{@product.name} — it has existing batch records."
+      return
+    end
+
+    @product.destroy!
+    redirect_to supplier_path(@supplier), notice: "#{@product.name} deleted successfully."
+  rescue => e
+    redirect_to supplier_path(@supplier), alert: "Could not delete product: #{e.message}"
   end
 
   private

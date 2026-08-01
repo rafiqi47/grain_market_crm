@@ -69,7 +69,38 @@ class Product < ApplicationRecord
     product_batches.target.any? ? product_batches.select(&:active?).sum(&:quantity_on_hand) : product_batches.active.sum(:quantity_on_hand)
   end
 
+  def display_total_quantity_on_hand
+    return "—" if total_quantity_on_hand.nil?
+
+    case unit.to_s
+    when "bag", "piece"
+      "#{total_quantity_on_hand}"
+    when "kg"
+      "#{(total_quantity_on_hand / 40.0).round(2)} Maunds"
+    when "ml", "gram"
+      display_ml_or_gram_quantity_by_batch
+    else
+      total_quantity_on_hand.to_s
+    end
+  end
+
   private
+
+  def active_batches
+    product_batches.target.any? ? product_batches.select(&:active?) : product_batches.active
+  end
+
+  def display_ml_or_gram_quantity_by_batch
+    quantities = active_batches
+      .group_by { |batch| batch.package_size.to_s }
+      .transform_values { |batches| batches.sum(&:quantity_on_hand) }
+
+    return total_quantity_on_hand.to_s if quantities.blank?
+
+    quantities.sort_by { |package_size, _qty| package_size.to_i }.map do |package_size, quantity|
+      "#{quantity.to_f/package_size.to_f} of #{package_size} #{unit.to_s}"
+    end.join("<br>")
+  end
 
   def validate_unit_for_category
     return if category.blank? || unit.blank?

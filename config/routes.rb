@@ -43,7 +43,7 @@ Rails.application.routes.draw do
     end
     resources :supplier_ledgers, only: [:new, :create, :edit, :update, :destroy], controller: "suppliers/supplier_ledgers"
     resources :purchases, only: [:new, :create], controller: "suppliers/purchases"
-    resources :products, only: [:show, :edit, :update], controller: "suppliers/products" do
+    resources :products, only: [:show, :edit, :update, :destroy], controller: "suppliers/products" do
       collection do
         post :quick_create
       end

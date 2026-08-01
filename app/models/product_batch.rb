@@ -50,18 +50,23 @@ class ProductBatch < ApplicationRecord
     return "—" if purchase_price_per_unit.nil?
     price = purchase_price_per_unit
     case product&.unit.to_s
-    when "bag"   then "#{price.round(2)} / bag"
-    when "piece" then "#{price.round(2)} / piece"
-    when "kg"    then "#{(price * 40).round(2)} / Maund"
+    when "bag"   then "#{price.round(2)}"
+    when "piece" then "#{price.round(2)}"
+    when "kg"    then "#{(price * 40).round(2)}"
     when "ml"
       ps = package_size.to_f
-      ps > 0 ? "#{(price * ps).round(2)} / packet" : "#{price.round(2)} / ml"
+      ps > 0 ? "#{(price * ps).round(2)}" : "#{price.round(2)}"
     when "gram"
       ps = package_size.to_f
-      ps > 0 ? "#{(price * ps).round(2)} / packet" : "#{price.round(2)} / g"
+      ps > 0 ? "#{(price * ps).round(2)}" : "#{price.round(2)}"
     else
       price.to_s
     end
+  end
+
+  def total_purchase_value
+    return "—" if purchase_price_per_unit.nil?
+    (purchase_price_per_unit * initial_quantity).round(2)
   end
 
   # Used in sales order form inventory dropdown labels
