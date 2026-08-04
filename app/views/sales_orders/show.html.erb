@@ -51,7 +51,32 @@
   line_items = @sales_order.sales_line_items.includes(product_batch: :product)
 %>
 
-<div class="space-y-6 p-6 print:p-0 print:space-y-0">
+<style>
+  @media print {
+    /* Hide everything by default (navbar, sidebar, flash banners, anything
+       from the app layout wrapping this view)... */
+    body * {
+      visibility: hidden;
+    }
+
+    /* ...then re-reveal only this page's content. */
+    #sales-order-printable,
+    #sales-order-printable * {
+      visibility: visible;
+    }
+
+    #sales-order-printable {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  }
+</style>
+
+<div id="sales-order-printable" class="space-y-6 p-6 print:p-0 print:space-y-0">
 
   <!-- Nav Controls (screen only) -->
   <div class="flex items-center justify-between print:hidden">
@@ -280,52 +305,90 @@
       </div>
     </div>
 
-    <!-- Items Table -->
+    <!-- Items Table — rows combined by product + price + package_size for print -->
+    <%
+      # Group line items: same product + same sale price + same package size = one row
+      # This handles FIFO splits across multiple batches of the same product
+      print_rows = line_items
+        .group_by { |item|
+          [
+            item.product_batch.product_id,
+            item.unit_price.to_f,
+            item.product_batch.package_size.to_f
+          ]
+        }
+        .map { |(product_id, unit_price, pkg_size), items|
+          first_batch = items.first.product_batch
+          {
+            product:      first_batch.product,
+            package_size: pkg_size,
+            unit:         first_batch.product.unit.to_s,
+            total_qty:    items.sum(&:quantity),
+            unit_price:   unit_price,
+            line_total:   items.sum { |i| i.quantity * i.unit_price }
+          }
+        }
+      print_grand_total = print_rows.sum { |r| r[:line_total] }
+    %>
     <div class="mt-4">
       <table class="min-w-full text-sm border-collapse border border-gray-300">
         <thead class="bg-gray-100">
           <tr class="border-b border-gray-300">
             <th class="px-3 py-2 text-right font-bold text-gray-800 border-r border-gray-300">آئٹم / تفصیلات</th>
-            <th class="px-3 py-2 text-center font-bold text-gray-800 border-r border-gray-300">بیچ نمبر</th>
-            <th class="px-3 py-2 text-center font-bold text-gray-800 border-r border-gray-300">میعاد ختم</th>
             <th class="px-3 py-2 text-left font-bold text-gray-800 border-r border-gray-300">مقدار</th>
             <th class="px-3 py-2 text-left font-bold text-gray-800 border-r border-gray-300">قیمت فی یونٹ</th>
             <th class="px-3 py-2 text-left font-bold text-gray-800">کل</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-300 bg-white">
-          <% print_grand_total = 0 %>
-          <% line_items.each do |item| %>
-            <% product    = item.product_batch.product %>
-            <% batch      = item.product_batch %>
-            <% line_total = item.quantity * item.unit_price %>
-            <% print_grand_total += line_total %>
+          <% print_rows.each do |row| %>
             <tr class="border-b border-gray-300">
+
+              <!-- Product name -->
               <td class="px-3 py-2 text-right font-semibold border-r border-gray-300">
-                <% if product.slug.present? %>
+                <% if row[:product].slug.present? %>
                   <span class="font-bold text-base" style="font-family: 'Noto Nastaliq Urdu', serif;">
-                    <%= product.slug %>
+                    <%= row[:product].slug %>
                   </span>
-                  <span class="text-xs text-gray-500 font-normal mr-1">(<%= product.name %>)</span>
+                  <span class="text-xs text-gray-500 font-normal mr-1">(<%= row[:product].name %>)</span>
                 <% else %>
-                  <%= product.name %>
+                  <%= row[:product].name %>
                 <% end %>
               </td>
-              <td class="px-3 py-2 text-center font-mono text-xs border-r border-gray-300">
-                <%= batch.batch_number.presence || "اوپن سٹاک" %>
-              </td>
-              <td class="px-3 py-2 text-center text-xs border-r border-gray-300">
-                <%= batch.expiry_date&.strftime("%d/%m/%Y") || "—" %>
-              </td>
+
+              <!-- Combined quantity -->
               <td class="px-3 py-2 text-left font-medium border-r border-gray-300">
-                <%= qty_display_urdu(item) %>
+                <%
+                  qty_str = case row[:unit]
+                  when "bag"   then "#{row[:total_qty].to_i} بوری"
+                  when "piece" then "#{row[:total_qty].to_i} عدد"
+                  when "kg"
+                    m = (row[:total_qty] / 40).to_i
+                    k = (row[:total_qty] % 40).round(2)
+                    "#{m} من #{k} کلو"
+                  when "ml"
+                    ps = row[:package_size]
+                    ps > 0 ? "#{row[:total_qty].to_i} × #{ps.to_i} ملی لٹر" : "#{row[:total_qty].to_i} ملی لٹر"
+                  when "gram"
+                    ps = row[:package_size]
+                    ps > 0 ? "#{row[:total_qty].to_i} × #{ps.to_i} گرام" : "#{row[:total_qty].to_i} گرام"
+                  else
+                    row[:total_qty].to_s
+                  end
+                %>
+                <%= qty_str %>
               </td>
+
+              <!-- Unit price -->
               <td class="px-3 py-2 text-left font-mono text-gray-600 border-r border-gray-300">
-                Rs. <%= number_with_delimiter(item.unit_price.round(2)) %>
+                Rs. <%= number_with_delimiter(row[:unit_price].round(2)) %>
               </td>
+
+              <!-- Line total -->
               <td class="px-3 py-2 text-left font-bold font-mono">
-                Rs. <%= number_with_delimiter(line_total.round(2)) %>
+                Rs. <%= number_with_delimiter(row[:line_total].round(2)) %>
               </td>
+
             </tr>
           <% end %>
         </tbody>
