@@ -17,7 +17,7 @@ if owner.present?
   organization = owner.organization
   if organization.present?
     organization.name = "Master M. Akabr Corporation And Spray Center"
-    organization.urdu_name = "ماسٹر محمد اکبر کارپوریشن اینڈ سپرے سنٹر"
+    organization.urdu_name = "ماسٹر ایم اکبر کارپوریشن اینڈ سپرے سنٹر"
     organization.save!
   end
 end
@@ -51,27 +51,27 @@ puts "Organization + Owner seeding complete!"
 
 
 
-organization = Organization.find_or_initialize_by(name: "Atif Spray Center", urdu_name: "عاطف سپرے سنٹر")
-organization.save! if organization.new_record?
+# organization = Organization.find_or_initialize_by(name: "Atif Spray Center", urdu_name: "عاطف سپرے سنٹر")
+# organization.save! if organization.new_record?
 
-owner = organization.users.find_or_initialize_by(email: "atifwaseem2211@gmail.com")
-owner.full_name = "Atif"
-owner.phone = "03367927937"
-owner.role = :owner
-owner.password = "Atif@319"
-owner.password_confirmation = "Atif@319" if owner.respond_to?(:password_confirmation)
+# owner = organization.users.find_or_initialize_by(email: "atifwaseem2211@gmail.com")
+# owner.full_name = "Atif"
+# owner.phone = "03367927937"
+# owner.role = :owner
+# owner.password = "Atif@319"
+# owner.password_confirmation = "Atif@319" if owner.respond_to?(:password_confirmation)
 
-if owner.new_record?
-  begin
-    owner.save!
-    puts "Owner created: #{owner.email}"
-  rescue Resend::Error => e
-    puts "Owner record saved, but password-setup email failed to send: #{e.message}"
-    puts "(This is expected until a verified sending domain is configured with Resend.)"
-  end
-else
-  owner.save!
-  puts "Owner already existed, updated: #{owner.email}"
-end
+# if owner.new_record?
+#   begin
+#     owner.save!
+#     puts "Owner created: #{owner.email}"
+#   rescue Resend::Error => e
+#     puts "Owner record saved, but password-setup email failed to send: #{e.message}"
+#     puts "(This is expected until a verified sending domain is configured with Resend.)"
+#   end
+# else
+#   owner.save!
+#   puts "Owner already existed, updated: #{owner.email}"
+# end
 
-puts "Organization + Owner seeding complete!"
+# puts "Organization + Owner seeding complete!"
